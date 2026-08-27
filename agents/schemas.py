@@ -1,11 +1,13 @@
 # FILE: agents/schemas.py
-"""Pydantic contracts for structured agent communication (§20, 74-75)."""
-import uuid
+"""Pydantic contracts for structured agent communication (§15-18)."""
 import datetime
+import uuid
 from decimal import Decimal
-from typing import Optional, List
 from enum import Enum
+from typing import List, Optional
 from pydantic import BaseModel, Field
+
+from domain.enums import ActionType, DecisionType, ExternalStatus
 
 
 class AgentId(str, Enum):
@@ -13,31 +15,6 @@ class AgentId(str, Enum):
     NEGOTIATOR = "NEGOTIATOR"
     FINOPS_EXECUTOR = "FINOPS_EXECUTOR"
     POLICY_ENGINE = "POLICY_ENGINE"
-
-
-class ActionType(str, Enum):
-    CAPTURE = "CAPTURE"
-    REROUTE = "REROUTE"
-    VOID = "VOID"
-    REFUND = "REFUND"
-    NO_ACTION = "NO_ACTION"
-    MANUAL_REVIEW = "MANUAL_REVIEW"
-    VERIFY = "VERIFY"
-
-
-class DecisionType(str, Enum):
-    APPROVE = "APPROVE"
-    REJECT = "REJECT"
-    MANUAL_REVIEW = "MANUAL_REVIEW"
-
-
-class ExternalStatus(str, Enum):
-    SUCCESS = "SUCCESS"
-    FAILED = "FAILED"
-    UNKNOWN = "UNKNOWN"
-    VOIDED = "VOIDED"
-    REFUNDED = "REFUNDED"
-    DUPLICATE = "DUPLICATE"
 
 
 # --- Base Agent Message ---
@@ -67,9 +44,11 @@ class NegotiatorResult(AgentMessage):
     agent_id: AgentId = AgentId.NEGOTIATOR
     external_status: ExternalStatus
     external_transaction_id: Optional[str] = None
+    razorpay_order_id: Optional[str] = None
     amount: Decimal
     currency: str = "INR"
-    rail: str
+    rail: str = "RAZORPAY_TEST"
+    verification_details: Optional[dict] = None
 
 
 # --- Policy Decision ---
@@ -83,7 +62,7 @@ class PolicyDecision(BaseModel):
     timestamp: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
-# --- Authorized Action (bridge between Policy and FinOps) ---
+# --- Authorized Action (bridge between Policy Engine and FinOps Executor) ---
 
 class AuthorizedAction(BaseModel):
     command_id: str = Field(default_factory=lambda: uuid.uuid4().hex[:16])
@@ -92,6 +71,8 @@ class AuthorizedAction(BaseModel):
     amount: Decimal
     currency: str = "INR"
     target_rail: Optional[str] = None
+    razorpay_payment_id: Optional[str] = None
+    razorpay_order_id: Optional[str] = None
     policy_decision_id: str
     idempotency_key: str
     expires_at: datetime.datetime = Field(

@@ -48,7 +48,7 @@ class TestDetective(unittest.TestCase):
         result = asyncio.run(analyze(self.duplicate_intent, trace_id="test_trace"))
         self.assertIsInstance(result, DetectiveResult)
         self.assertEqual(result.hypothesis, "duplicate_capture_detected")
-        self.assertEqual(result.recommended_action, ActionType.VOID)
+        self.assertEqual(result.recommended_action, ActionType.REFUND)
 
     def test_card_timeout(self):
         intent = {
@@ -60,8 +60,8 @@ class TestDetective(unittest.TestCase):
             "has_existing_capture": False,
         }
         result = asyncio.run(analyze(intent))
-        self.assertEqual(result.hypothesis, "card_timeout_suspected")
-        self.assertEqual(result.recommended_action, ActionType.REROUTE)
+        self.assertEqual(result.hypothesis, "gateway_timeout_or_pending_capture")
+        self.assertEqual(result.recommended_action, ActionType.CAPTURE)
 
     def test_evidence_list_populated(self):
         result = asyncio.run(analyze(self.uncertain_upi_intent))
@@ -84,7 +84,6 @@ class TestNegotiator(unittest.TestCase):
     def test_verify_returns_structured(self):
         result = asyncio.run(verify(self.uncertain_upi_intent, idempotency_key="idem_test_neg"))
         self.assertIsInstance(result, NegotiatorResult)
-        self.assertEqual(result.rail, "UPI_HDFC")
         self.assertEqual(result.amount, Decimal("1500.00"))
 
     def test_verify_returns_valid_status(self):
@@ -135,4 +134,3 @@ class TestFinOpsExecutor(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -1,16 +1,16 @@
 # FILE: tests/test_state_machine.py
-"""Tests for the 10-state payment state machine."""
+"""Tests for the 15-state payment state machine."""
 import unittest
 from core.state_machine import (
-    CAPTURED, COMPENSATING, CREATED, DUPLICATE_SUSPECTED, FAILED,
-    MANUAL_REVIEW, PENDING_RAIL, RECONCILED, UNCERTAIN, VERIFYING,
+    AUTHORIZED, CAPTURED, CREATED, DUPLICATE_SUSPECTED, FAILED,
+    MANUAL_REVIEW, PENDING_RAIL, RECONCILED, UNCERTAIN, UNKNOWN, VERIFYING,
     VALID_STATES, allowed_events, is_terminal, transition,
 )
 
 
 class TestStates(unittest.TestCase):
     def test_valid_states_count(self):
-        self.assertEqual(len(VALID_STATES), 10)
+        self.assertEqual(len(VALID_STATES), 15)
 
     def test_terminal_states(self):
         self.assertTrue(is_terminal(CAPTURED))
@@ -23,8 +23,9 @@ class TestStates(unittest.TestCase):
         self.assertFalse(is_terminal(PENDING_RAIL))
         self.assertFalse(is_terminal(UNCERTAIN))
         self.assertFalse(is_terminal(VERIFYING))
-        self.assertFalse(is_terminal(COMPENSATING))
+        self.assertFalse(is_terminal(AUTHORIZED))
         self.assertFalse(is_terminal(DUPLICATE_SUSPECTED))
+        self.assertFalse(is_terminal(UNKNOWN))
 
 
 class TestTransitions(unittest.TestCase):
@@ -40,11 +41,6 @@ class TestTransitions(unittest.TestCase):
     def test_duplicate_path(self):
         self.assertEqual(transition(UNCERTAIN, "DUPLICATE_DETECTED"), DUPLICATE_SUSPECTED)
         self.assertEqual(transition(CAPTURED, "LATE_DUPLICATE"), DUPLICATE_SUSPECTED)
-
-    def test_compensation_path(self):
-        self.assertEqual(transition(DUPLICATE_SUSPECTED, "COMPENSATE"), COMPENSATING)
-        self.assertEqual(transition(COMPENSATING, "COMPENSATION_CONFIRMED"), RECONCILED)
-        self.assertEqual(transition(COMPENSATING, "COMPENSATION_FAILED"), MANUAL_REVIEW)
 
     def test_unknown_event_fallback(self):
         self.assertEqual(transition(CREATED, "BOGUS_EVENT"), MANUAL_REVIEW)
@@ -62,4 +58,3 @@ class TestTransitions(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

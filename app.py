@@ -5,19 +5,24 @@ import sys
 
 from fastapi import FastAPI
 
+import config
 from api.demo_routes import router as demo_router
+from api.payment_routes import router as payment_router
+from api.reconciliation_routes import router as case_router
 from api.webhook_receiver import router as webhook_router
 from core.idempotency import close_redis
 from db.connection import check_db, close_db, get_pool, init_db
 
 app = FastAPI(
     title="ResolverAI Engine",
-    description="AI-Guided Payment State Resolution & Revenue Recovery Control Plane",
+    description="Merchant-side Payment Integrity & Recovery Platform",
     version="1.0.0",
 )
 
 # Register routers
 app.include_router(webhook_router)
+app.include_router(payment_router)
+app.include_router(case_router)
 app.include_router(demo_router)
 
 
@@ -25,7 +30,7 @@ app.include_router(demo_router)
 async def startup_event():
     try:
         await init_db()
-        print("[STARTUP] Database pool initialized", file=sys.stderr)
+        print("[STARTUP] Database pool & schema migrations initialized", file=sys.stderr)
     except Exception as e:
         print(f"[STARTUP] FATAL: Could not connect to database: {e}", file=sys.stderr)
         raise
@@ -41,7 +46,7 @@ async def shutdown_event():
 @app.get("/health")
 async def health():
     """Health check — is the service alive?"""
-    return {"status": "ok", "service": "resolverai"}
+    return {"status": "ok", "service": "resolverai", "environment": config.ENVIRONMENT}
 
 
 @app.get("/ready")
@@ -57,8 +62,10 @@ async def readiness():
 @app.get("/")
 async def root():
     return {
-        "service": "ResolverAI",
+        "service": "ResolverAI — Payment Integrity & Recovery Platform",
         "version": "1.0.0",
+        "razorpay_mode": config.RAZORPAY_MODE,
+        "ai_mode": config.AI_MODE,
         "docs": "/docs",
         "health": "/health",
     }

@@ -104,7 +104,7 @@ class TestPolicyEngine(unittest.TestCase):
     def test_create_authorized_action(self):
         decision = self.engine.evaluate(make_intent(), make_negotiator(), make_detective())
         action = self.engine.create_authorized_action(
-            decision, make_intent(), make_detective(), "idem_test"
+            decision, make_intent(), make_detective(), make_negotiator(), "idem_test"
         )
         self.assertIsNotNone(action)
         self.assertEqual(action.action, ActionType.CAPTURE)
@@ -115,11 +115,10 @@ class TestPolicyEngine(unittest.TestCase):
             make_intent(state="CAPTURED"), make_negotiator(), make_detective()
         )
         action = self.engine.create_authorized_action(
-            decision, make_intent(), make_detective(), "idem_test"
+            decision, make_intent(), make_detective(), make_negotiator(), "idem_test"
         )
         self.assertIsNone(action)
 
 
 if __name__ == "__main__":
     unittest.main()
-

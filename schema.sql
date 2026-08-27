@@ -4,7 +4,7 @@
 -- ============================================================
 -- TRUTH 1: EVENT TRUTH — What events did we receive?
 -- ============================================================
-CREATE TABLE payment_events (
+CREATE TABLE IF NOT EXISTS payment_events (
     event_id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     payment_intent_id UUID NOT NULL,
     source          VARCHAR(50)  NOT NULL,
@@ -21,9 +21,12 @@ CREATE TABLE payment_events (
 -- ============================================================
 -- TRUTH 2: OPERATIONAL TRUTH — Current resolution state
 -- ============================================================
-CREATE TABLE payment_intents (
+CREATE TABLE IF NOT EXISTS payment_intents (
     payment_intent_id UUID PRIMARY KEY,
+    merchant_reference VARCHAR(255),
     order_id        VARCHAR(255)  NOT NULL,
+    razorpay_order_id VARCHAR(255),
+    active_payment_id VARCHAR(255),
     merchant_id     VARCHAR(255)  NOT NULL DEFAULT 'default_merchant',
     amount          NUMERIC(18,2) NOT NULL,
     currency        VARCHAR(3)    NOT NULL DEFAULT 'INR',
@@ -37,12 +40,13 @@ CREATE TABLE payment_intents (
 );
 
 -- ============================================================
--- External Executions — Actual rail payment attempts
+-- External Executions — Actual payment provider attempts
 -- ============================================================
-CREATE TABLE external_executions (
+CREATE TABLE IF NOT EXISTS external_executions (
     execution_id    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     payment_intent_id UUID NOT NULL REFERENCES payment_intents(payment_intent_id),
-    rail_id         VARCHAR(50)   NOT NULL,
+    provider        VARCHAR(50)   NOT NULL DEFAULT 'RAZORPAY',
+    rail_id         VARCHAR(50)   NOT NULL DEFAULT 'RAZORPAY_TEST',
     external_txn_id VARCHAR(255),
     operation       VARCHAR(50)   NOT NULL DEFAULT 'AUTHORIZE',
     amount          NUMERIC(18,2) NOT NULL,
@@ -55,7 +59,7 @@ CREATE TABLE external_executions (
 -- ============================================================
 -- External Execution Attempts — Individual network attempts
 -- ============================================================
-CREATE TABLE external_execution_attempts (
+CREATE TABLE IF NOT EXISTS external_execution_attempts (
     attempt_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     execution_id    UUID NOT NULL REFERENCES external_executions(execution_id),
     attempt_number  INT  NOT NULL DEFAULT 1,
@@ -70,7 +74,7 @@ CREATE TABLE external_execution_attempts (
 -- ============================================================
 -- Durable Outbox — Crash-safe async processing queue
 -- ============================================================
-CREATE TABLE outbox_events (
+CREATE TABLE IF NOT EXISTS outbox_events (
     outbox_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_type      VARCHAR(100) NOT NULL,
     aggregate_id    VARCHAR(255) NOT NULL,
@@ -82,9 +86,38 @@ CREATE TABLE outbox_events (
 );
 
 -- ============================================================
+-- Reconciliation Cases — Track unresolved operational incidents
+-- ============================================================
+CREATE TABLE IF NOT EXISTS reconciliation_cases (
+    case_id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    payment_intent_id UUID NOT NULL REFERENCES payment_intents(payment_intent_id),
+    case_type       VARCHAR(50)  NOT NULL,
+    severity        VARCHAR(20)  NOT NULL DEFAULT 'MEDIUM',
+    status          VARCHAR(50)  NOT NULL DEFAULT 'OPEN',
+    reason          TEXT         NOT NULL,
+    opened_at       TIMESTAMPTZ  DEFAULT NOW(),
+    resolved_at     TIMESTAMPTZ,
+    operator_id     VARCHAR(255),
+    resolution_notes TEXT
+);
+
+-- ============================================================
+-- Audit Events — Operational audit records
+-- ============================================================
+CREATE TABLE IF NOT EXISTS audit_events (
+    audit_id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_type      VARCHAR(100) NOT NULL,
+    actor_id        VARCHAR(255) NOT NULL DEFAULT 'SYSTEM',
+    resource_type   VARCHAR(50)  NOT NULL,
+    resource_id     VARCHAR(255) NOT NULL,
+    payload         JSONB        NOT NULL,
+    created_at      TIMESTAMPTZ  DEFAULT NOW()
+);
+
+-- ============================================================
 -- TRUTH 3: FINANCIAL-ACTION EVIDENCE — Immutable audit trail
 -- ============================================================
-CREATE TABLE immutable_evidence (
+CREATE TABLE IF NOT EXISTS immutable_evidence (
     evidence_id     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     payment_intent_id UUID NOT NULL,
     event_id        UUID,
@@ -109,6 +142,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS evidence_immutable ON immutable_evidence;
 CREATE TRIGGER evidence_immutable
     BEFORE UPDATE OR DELETE ON immutable_evidence
     EXECUTE FUNCTION block_evidence_modification();
@@ -121,6 +155,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS events_immutable ON payment_events;
 CREATE TRIGGER events_immutable
     BEFORE UPDATE OR DELETE ON payment_events
     EXECUTE FUNCTION block_event_modification();

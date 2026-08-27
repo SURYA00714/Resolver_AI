@@ -1,21 +1,24 @@
 # FILE: agents/finops_executor.py
-"""FinOps Executor — Executes ONLY authorized financial actions (§19, 74-76).
+"""FinOps Executor — Executes ONLY policy-authorized financial actions (§18).
 
-CRITICAL INVARIANT: This agent NEVER generates its own commands.
-It accepts ONLY an AuthorizedAction from the Policy Engine.
+CRITICAL INVARIANT: This agent NEVER generates its own financial commands.
+It accepts ONLY an AuthorizedAction created by the Policy Engine.
 """
 import datetime
 import sys
 from decimal import Decimal
 from typing import Optional
 
+import config
 from agents.schemas import (
     ActionType,
     AuthorizedAction,
     ExternalStatus,
     FinOpsResult,
 )
-from rails.simulator import get_rail
+from domain.errors import RazorpayAPIError
+from razorpay.payments import capture_payment
+from razorpay.refunds import create_refund
 
 
 async def execute(
@@ -23,25 +26,19 @@ async def execute(
     trace_id: Optional[str] = None,
 ) -> FinOpsResult:
     """
-    Execute a policy-authorized financial action on the target rail.
+    Execute a policy-authorized financial action.
 
     Validates:
-    1. Command has not expired
-    2. Command has valid action type
-    3. Amount is positive
-
-    Then executes via the rail and returns structured FinOpsResult.
+    1. Command expiration
+    2. Positive amount
+    3. Mandatory policy decision ID & idempotency key
     """
     now = datetime.datetime.now(datetime.timezone.utc)
 
-    # Validation 1: Expiration check
-    if command.expires_at.tzinfo is None:
-        expires = command.expires_at.replace(tzinfo=datetime.timezone.utc)
-    else:
-        expires = command.expires_at
-
+    # Expiration check
+    expires = command.expires_at if command.expires_at.tzinfo else command.expires_at.replace(tzinfo=datetime.timezone.utc)
     if now > expires:
-        print(f"[FINOPS] Command {command.command_id} EXPIRED", file=sys.stderr)
+        print(f"[FINOPS] Rejecting command {command.command_id}: Command EXPIRED", file=sys.stderr)
         return FinOpsResult(
             payment_intent_id=command.payment_intent_id,
             trace_id=trace_id or "",
@@ -53,8 +50,7 @@ async def execute(
             error="Command expired",
         )
 
-    # Validation 2: Amount must be positive
-    if command.amount <= 0:
+    if command.amount <= 0 and command.action != ActionType.NO_ACTION:
         return FinOpsResult(
             payment_intent_id=command.payment_intent_id,
             trace_id=trace_id or "",
@@ -66,27 +62,105 @@ async def execute(
             error="Amount must be positive",
         )
 
-    rail = get_rail(command.target_rail or "UPI_HDFC")
+    # Path A: Real Razorpay API Mode (TEST / LIVE)
+    if config.RAZORPAY_MODE in ("TEST", "LIVE") and command.razorpay_payment_id:
+        try:
+            if command.action == ActionType.CAPTURE:
+                res = await capture_payment(
+                    payment_id=command.razorpay_payment_id,
+                    amount=command.amount,
+                    currency=command.currency,
+                )
+                return FinOpsResult(
+                    payment_intent_id=command.payment_intent_id,
+                    trace_id=trace_id or "",
+                    command_id=command.command_id,
+                    action_taken=ActionType.CAPTURE,
+                    execution_status=ExternalStatus.SUCCESS,
+                    external_transaction_id=res.get("id"),
+                    amount=command.amount,
+                    currency=command.currency,
+                )
 
+            elif command.action in (ActionType.REFUND, ActionType.VOID):
+                res = await create_refund(
+                    payment_id=command.razorpay_payment_id,
+                    amount=command.amount,
+                    notes={"policy_decision_id": command.policy_decision_id},
+                )
+                return FinOpsResult(
+                    payment_intent_id=command.payment_intent_id,
+                    trace_id=trace_id or "",
+                    command_id=command.command_id,
+                    action_taken=command.action,
+                    execution_status=ExternalStatus.REFUNDED,
+                    external_transaction_id=res.get("id"),
+                    amount=command.amount,
+                    currency=command.currency,
+                )
+
+            elif command.action == ActionType.NO_ACTION:
+                return FinOpsResult(
+                    payment_intent_id=command.payment_intent_id,
+                    trace_id=trace_id or "",
+                    command_id=command.command_id,
+                    action_taken=ActionType.NO_ACTION,
+                    execution_status=ExternalStatus.SUCCESS,
+                    amount=command.amount,
+                    currency=command.currency,
+                )
+
+        except RazorpayAPIError as e:
+            print(f"[FINOPS] Razorpay mutation error: {e}", file=sys.stderr)
+            return FinOpsResult(
+                payment_intent_id=command.payment_intent_id,
+                trace_id=trace_id or "",
+                command_id=command.command_id,
+                action_taken=command.action,
+                execution_status=ExternalStatus.FAILED,
+                amount=command.amount,
+                currency=command.currency,
+                error=str(e),
+            )
+
+    # Path B: Local Chaos Lab Simulator Mode
     try:
+        from chaos_lab.simulator import get_rail
+        rail = get_rail(command.target_rail or "RAZORPAY_TEST")
+
         if command.action == ActionType.CAPTURE:
             result = await rail.authorize(command.amount, command.idempotency_key)
         elif command.action == ActionType.VOID:
-            # Use idempotency_key as a pseudo-txn reference
             result = await rail.void(command.idempotency_key)
         elif command.action == ActionType.REFUND:
             result = await rail.refund(command.idempotency_key, command.amount)
-        elif command.action == ActionType.REROUTE:
-            # Reroute = authorize on a different rail
-            alt_rail = get_rail("UPI_ICICI")
-            result = await alt_rail.authorize(command.amount, f"{command.idempotency_key}_reroute")
         elif command.action == ActionType.NO_ACTION:
             result = {"status": "SUCCESS", "txn_id": None}
         else:
-            result = {"status": "FAILED", "reason": f"Unknown action: {command.action}"}
+            result = {"status": "FAILED", "reason": f"Unsupported action: {command.action}"}
+
+        raw_status = result.get("status", "UNKNOWN")
+        status_map = {
+            "SUCCESS": ExternalStatus.SUCCESS,
+            "CAPTURED": ExternalStatus.SUCCESS,
+            "VOIDED": ExternalStatus.VOIDED,
+            "REFUNDED": ExternalStatus.REFUNDED,
+            "FAILED": ExternalStatus.FAILED,
+        }
+
+        return FinOpsResult(
+            payment_intent_id=command.payment_intent_id,
+            trace_id=trace_id or "",
+            command_id=command.command_id,
+            action_taken=command.action,
+            execution_status=status_map.get(raw_status, ExternalStatus.FAILED),
+            external_transaction_id=result.get("txn_id"),
+            amount=command.amount,
+            currency=command.currency,
+        )
 
     except Exception as e:
-        print(f"[FINOPS] Execution error for {command.command_id}: {e}", file=sys.stderr)
+        print(f"[FINOPS] Chaos rail execution error: {e}", file=sys.stderr)
         return FinOpsResult(
             payment_intent_id=command.payment_intent_id,
             trace_id=trace_id or "",
@@ -97,23 +171,3 @@ async def execute(
             currency=command.currency,
             error=str(e),
         )
-
-    raw_status = result.get("status", "UNKNOWN")
-    status_map = {
-        "SUCCESS": ExternalStatus.SUCCESS,
-        "CAPTURED": ExternalStatus.SUCCESS,
-        "VOIDED": ExternalStatus.VOIDED,
-        "REFUNDED": ExternalStatus.REFUNDED,
-        "FAILED": ExternalStatus.FAILED,
-    }
-
-    return FinOpsResult(
-        payment_intent_id=command.payment_intent_id,
-        trace_id=trace_id or "",
-        command_id=command.command_id,
-        action_taken=command.action,
-        execution_status=status_map.get(raw_status, ExternalStatus.FAILED),
-        external_transaction_id=result.get("txn_id"),
-        amount=command.amount,
-        currency=command.currency,
-    )

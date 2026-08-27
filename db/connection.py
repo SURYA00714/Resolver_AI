@@ -14,6 +14,8 @@ async def init_db() -> asyncpg.Pool:
     if _pool is None:
         try:
             _pool = await asyncpg.create_pool(dsn=DB_URL)
+            from db.migrations import run_migrations
+            await run_migrations(_pool)
         except Exception as e:
             print(f"Database connection pool initialization error: {e}", file=sys.stderr)
             raise e

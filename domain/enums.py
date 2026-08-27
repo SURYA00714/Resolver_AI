@@ -1,0 +1,62 @@
+# FILE: domain/enums.py
+"""Domain enums for ResolverAI (§10, 15-18)."""
+from enum import Enum
+
+
+class PaymentState(str, Enum):
+    CREATED = "CREATED"
+    PENDING_RAIL = "PENDING_RAIL"
+    UNCERTAIN = "UNCERTAIN"
+    VERIFYING = "VERIFYING"
+    AUTHORIZED = "AUTHORIZED"
+    CAPTURED = "CAPTURED"
+    FAILED = "FAILED"
+    DUPLICATE_SUSPECTED = "DUPLICATE_SUSPECTED"
+    RECONCILIATION_REQUIRED = "RECONCILIATION_REQUIRED"
+    ACTION_PENDING = "ACTION_PENDING"
+    ACTION_EXECUTING = "ACTION_EXECUTING"
+    ACTION_CONFIRMED = "ACTION_CONFIRMED"
+    UNKNOWN = "UNKNOWN"
+    MANUAL_REVIEW = "MANUAL_REVIEW"
+    RECONCILED = "RECONCILED"
+
+
+class ActionType(str, Enum):
+    CAPTURE = "CAPTURE"
+    REFUND = "REFUND"
+    VOID = "VOID"
+    REROUTE = "REROUTE"
+    NO_ACTION = "NO_ACTION"
+    MANUAL_REVIEW = "MANUAL_REVIEW"
+    VERIFY = "VERIFY"
+
+
+class DecisionType(str, Enum):
+    APPROVE = "APPROVE"
+    REJECT = "REJECT"
+    MANUAL_REVIEW = "MANUAL_REVIEW"
+
+
+class ExternalStatus(str, Enum):
+    SUCCESS = "SUCCESS"
+    CAPTURED = "CAPTURED"
+    AUTHORIZED = "AUTHORIZED"
+    FAILED = "FAILED"
+    UNKNOWN = "UNKNOWN"
+    VOIDED = "VOIDED"
+    REFUNDED = "REFUNDED"
+    DUPLICATE = "DUPLICATE"
+
+
+class CaseStatus(str, Enum):
+    OPEN = "OPEN"
+    IN_PROGRESS = "IN_PROGRESS"
+    RESOLVED = "RESOLVED"
+    CLOSED = "CLOSED"
+
+
+class CaseSeverity(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"

@@ -1,5 +1,5 @@
-# FILE: rails/simulator.py
-"""4 synthetic payment rails with configurable fault injection (§26-28)."""
+# FILE: chaos_lab/simulator.py
+"""LOCAL CHAOS TEST ENVIRONMENT — Synthetic Rail Simulator (§22)."""
 import asyncio
 import os
 import random
@@ -7,7 +7,7 @@ import uuid
 from decimal import Decimal
 from typing import Any, Dict, Optional, Set
 
-from rails.base import PaymentRailBase
+from chaos_lab.base import PaymentRailBase
 
 CHAOS_SEED = int(os.getenv("CHAOS_SEED", "42"))
 
@@ -78,7 +78,7 @@ class SyntheticRail(PaymentRailBase):
     async def capture(self, external_txn_id: str, amount: Decimal) -> Dict[str, Any]:
         await self._simulate_latency()
         txn = self._transactions.get(external_txn_id)
-        if txn and txn["status"] == "SUCCESS":
+        if txn and txn["status"] in ("SUCCESS", "AUTHORIZED"):
             txn["status"] = "CAPTURED"
             return {"status": "SUCCESS", "captured_amount": amount}
         return {"status": "FAILED", "reason": "Transaction not in capturable state"}
@@ -100,10 +100,8 @@ class SyntheticRail(PaymentRailBase):
         return {"status": "FAILED", "reason": "Cannot refund"}
 
 
-# --- 4 Pre-configured Rails ---
-
 def get_rail(rail_name: str, chaos_mode: Optional[str] = None) -> SyntheticRail:
-    """Factory to get a configured rail instance."""
+    """Factory to get a synthetic chaos rail instance."""
     configs = {
         "UPI_HDFC": {"latency_ms": 200, "success_rate": 0.95},
         "UPI_ICICI": {"latency_ms": 300, "success_rate": 0.90},
