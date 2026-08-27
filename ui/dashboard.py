@@ -20,20 +20,30 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 def run_query(query: str, *args):
     """Execute asynchronous database query synchronously for Streamlit."""
     async def _fetch():
-        conn = await asyncpg.connect(DB_URL)
+        conn = None
         try:
+            conn = await asyncpg.connect(DB_URL)
             return [dict(r) for r in await conn.fetch(query, *args)]
         except Exception as e:
-            print(f"Query error: {e}", file=sys.stderr)
+            print(f"Database query connection error: {e}", file=sys.stderr)
             return []
         finally:
-            await conn.close()
+            if conn:
+                await conn.close()
     return asyncio.run(_fetch())
+
 
 
 def api_post(path: str, data: dict = None):
     try:
         r = httpx.post(f"{API_URL}{path}", json=data, timeout=10)
+        return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+def api_get(path: str):
+    try:
+        r = httpx.get(f"{API_URL}{path}", timeout=10)
         return r.json()
     except Exception as e:
         return {"error": str(e)}
@@ -181,7 +191,7 @@ with tab_real:
         selected_intent = st.selectbox("Select Payment Intent ID to Inspect:", intents_df["Intent ID"].tolist())
         
         if selected_intent:
-            intent_details = api_post(f"/payments/{selected_intent}/timeline")
+            intent_details = api_get(f"/payments/{selected_intent}/timeline")
             
             if "error" not in intent_details:
                 c1, c2 = st.columns([1, 1])

@@ -50,6 +50,7 @@ async def health():
 
 
 @app.get("/ready")
+@app.get("/health/ready")
 async def readiness():
     """Readiness check — can we serve requests?"""
     try:
