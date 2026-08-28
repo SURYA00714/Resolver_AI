@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Query, HTTPException, Depends
 
 import asyncpg
-from core.auth import get_current_user, has_permission
+from core.auth import has_permission
 from core.rbac import require_permission
 from db.connection import get_pool
 from ledger.financial_effects import get_system_financial_summary
