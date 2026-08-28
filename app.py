@@ -4,8 +4,10 @@ import os
 import sys
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 import config
+from api.dashboard_routes import router as dashboard_router
 from api.demo_routes import router as demo_router
 from api.payment_routes import router as payment_router
 from api.reconciliation_routes import router as case_router
@@ -19,11 +21,21 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Enable CORS for Next.js frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Register routers
 app.include_router(webhook_router)
 app.include_router(payment_router)
 app.include_router(case_router)
 app.include_router(demo_router)
+app.include_router(dashboard_router)
 
 
 @app.on_event("startup")
