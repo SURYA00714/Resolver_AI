@@ -25,7 +25,7 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     return payload
 
 
-async def require_permission(permission: str):
+def require_permission(permission: str):
     """Dependency factory: Require a specific permission."""
     async def _check(authorization: Optional[str] = Header(None)) -> dict:
         payload = await get_current_user(authorization)
@@ -44,7 +44,7 @@ async def require_permission(permission: str):
     return _check
 
 
-async def require_role(role: str):
+def require_role(role: str):
     """Dependency factory: Require a specific role or higher."""
     role_hierarchy = {"viewer": 0, "operator": 1, "admin": 2}
     async def _check(authorization: Optional[str] = Header(None)) -> dict:
