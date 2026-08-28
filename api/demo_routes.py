@@ -1,5 +1,13 @@
 # FILE: api/demo_routes.py
-"""Demo & Chaos endpoints for Local Chaos Test Laboratory (§23, 28)."""
+"""Engineering-only chaos injection endpoints.
+
+IMPORTANT: These endpoints are for LOCAL ENGINEERING TESTING ONLY.
+They are disabled in production (ENVIRONMENT=production).
+They inject synthetic scenarios into the database for testing
+the resolution pipeline. They DO NOT simulate Razorpay.
+
+Route prefix: /engineering/chaos
+"""
 import json
 import sys
 import uuid
@@ -14,80 +22,61 @@ from chaos_lab.faults import (
     inject_out_of_order_webhook,
 )
 from db.connection import get_pool
-from ledger.financial_effects import get_system_financial_summary
 
-router = APIRouter(prefix="/demo", tags=["demo"])
+router = APIRouter(prefix="/engineering/chaos", tags=["engineering"])
+
+ENGINEERING_BANNER = {
+    "environment": "LOCAL_ENGINEERING_TEST",
+    "warning": "This endpoint injects SYNTHETIC data. Data generated here is NOT from Razorpay.",
+}
 
 
-def _check_demo_allowed():
+def _check_engineering_mode():
     if config.ENVIRONMENT == "production":
-        raise HTTPException(status_code=403, detail="Demo chaos endpoints disabled in production environment")
-
-
-@router.post("/payment")
-async def create_demo_payment():
-    """Create a sample payment intent for local chaos testing."""
-    _check_demo_allowed()
-    pool = await get_pool()
-    intent_id = uuid.uuid4()
-    order_id = f"ORD_DEMO_{uuid.uuid4().hex[:8]}"
-    amount = Decimal("1299.00")
-
-    async with pool.acquire() as conn:
-        await conn.execute(
-            """INSERT INTO payment_intents
-               (payment_intent_id, order_id, merchant_id, amount, currency, current_state, active_rail)
-               VALUES ($1, $2, 'demo_merchant', $3, 'INR', 'PENDING_RAIL', 'RAZORPAY_TEST')""",
-            intent_id, order_id, amount,
-        )
-        await conn.execute(
-            """INSERT INTO outbox_events (event_type, aggregate_id, payload, status)
-               VALUES ('RESOLVE_INTENT', $1, $2, 'PENDING')""",
-            str(intent_id),
-            json.dumps({"payment_intent_id": str(intent_id), "scenario": "DEMO"}),
+        raise HTTPException(
+            status_code=403,
+            detail="Engineering chaos endpoints are disabled in production.",
         )
 
-    return {
-        "status": "created",
-        "payment_intent_id": str(intent_id),
-        "order_id": order_id,
-        "amount": "1299.00",
-    }
 
-
-@router.post("/chaos/late-auth")
+@router.post("/late-auth", summary="[ENGINEERING] Inject Late Authorization scenario")
 async def chaos_late_auth():
-    """Inject a Late Authorization scenario in Local Chaos Lab."""
-    _check_demo_allowed()
+    """
+    Inject a Late Authorization synthetic scenario for engineering tests.
+
+    WARNING: This creates SYNTHETIC payment intents — not real Razorpay payments.
+    Use only in LOCAL ENGINEERING TEST environments to verify the resolution pipeline.
+    """
+    _check_engineering_mode()
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await inject_late_authorization(conn)
-    return {"status": "injected", **result}
+    return {"_banner": ENGINEERING_BANNER, "injected": result}
 
 
-@router.post("/chaos/cross-rail")
+@router.post("/cross-rail", summary="[ENGINEERING] Inject Duplicate Execution scenario")
 async def chaos_cross_rail():
-    """Inject a Duplicate Execution scenario in Local Chaos Lab."""
-    _check_demo_allowed()
+    """
+    Inject a Cross-Rail Duplicate synthetic scenario for engineering tests.
+
+    WARNING: This creates SYNTHETIC payment intents — not real Razorpay payments.
+    """
+    _check_engineering_mode()
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await inject_cross_rail_duplicate(conn)
-    return {"status": "injected", **result}
+    return {"_banner": ENGINEERING_BANNER, "injected": result}
 
 
-@router.post("/chaos/out-of-order")
+@router.post("/out-of-order", summary="[ENGINEERING] Inject Out-of-Order Webhook scenario")
 async def chaos_out_of_order():
-    """Inject an Out-of-Order Webhook scenario in Local Chaos Lab."""
-    _check_demo_allowed()
+    """
+    Inject an Out-of-Order Webhook synthetic scenario for engineering tests.
+
+    WARNING: This creates SYNTHETIC payment intents — not real Razorpay payments.
+    """
+    _check_engineering_mode()
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await inject_out_of_order_webhook(conn)
-    return {"status": "injected", **result}
-
-
-@router.get("/financial-summary")
-async def financial_summary():
-    """Get system-wide financial effects summary."""
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        return await get_system_financial_summary(conn)
+    return {"_banner": ENGINEERING_BANNER, "injected": result}

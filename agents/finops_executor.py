@@ -71,6 +71,15 @@ async def execute(
                     amount=command.amount,
                     currency=command.currency,
                 )
+                # Post-mutation verification re-fetch
+                try:
+                    from razorpay.payments import get_payment
+                    verified_payment = await get_payment(command.razorpay_payment_id)
+                    verified_status = verified_payment.get("status")
+                    print(f"[FINOPS] Post-capture verification: status is '{verified_status}'", file=sys.stderr)
+                except Exception as ve:
+                    print(f"[FINOPS] Post-capture verification fetch warning: {ve}", file=sys.stderr)
+
                 return FinOpsResult(
                     payment_intent_id=command.payment_intent_id,
                     trace_id=trace_id or "",
@@ -88,6 +97,15 @@ async def execute(
                     amount=command.amount,
                     notes={"policy_decision_id": command.policy_decision_id},
                 )
+                # Post-mutation verification re-fetch
+                try:
+                    from razorpay.payments import get_payment
+                    verified_payment = await get_payment(command.razorpay_payment_id)
+                    verified_status = verified_payment.get("status")
+                    print(f"[FINOPS] Post-refund verification: status is '{verified_status}'", file=sys.stderr)
+                except Exception as ve:
+                    print(f"[FINOPS] Post-refund verification fetch warning: {ve}", file=sys.stderr)
+
                 return FinOpsResult(
                     payment_intent_id=command.payment_intent_id,
                     trace_id=trace_id or "",
@@ -108,6 +126,19 @@ async def execute(
                     execution_status=ExternalStatus.SUCCESS,
                     amount=command.amount,
                     currency=command.currency,
+                )
+
+            else:
+                print(f"[FINOPS] Unknown action requested: {command.action}", file=sys.stderr)
+                return FinOpsResult(
+                    payment_intent_id=command.payment_intent_id,
+                    trace_id=trace_id or "",
+                    command_id=command.command_id,
+                    action_taken=command.action,
+                    execution_status=ExternalStatus.FAILED,
+                    amount=command.amount,
+                    currency=command.currency,
+                    error=f"Action '{command.action}' is unknown or not permitted.",
                 )
 
         except RazorpayAPIError as e:

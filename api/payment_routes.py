@@ -4,10 +4,11 @@ import json
 import uuid
 from decimal import Decimal
 from typing import Any, Dict, Optional
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel
 
 import asyncpg
+from core.rbac import require_permission
 from core.resolver import resolve
 from db.connection import get_pool
 
@@ -21,7 +22,7 @@ class ManualResolveRequest(BaseModel):
 
 
 @router.get("/{payment_intent_id}")
-async def get_payment_intent(payment_intent_id: str):
+async def get_payment_intent(payment_intent_id: str, _: dict = Depends(require_permission("read:payments"))):
     """Fetch operational details for a specific payment intent."""
     pool = await get_pool()
     try:
@@ -44,7 +45,7 @@ async def get_payment_intent(payment_intent_id: str):
 
 
 @router.get("/{payment_intent_id}/timeline")
-async def get_payment_timeline(payment_intent_id: str):
+async def get_payment_timeline(payment_intent_id: str, _: dict = Depends(require_permission("read:payments"))):
     """Fetch complete chronological event timeline, evidence, and execution records."""
     pool = await get_pool()
     try:
@@ -80,7 +81,7 @@ async def get_payment_timeline(payment_intent_id: str):
 
 
 @router.post("/{payment_intent_id}/reconcile")
-async def reconcile_payment(payment_intent_id: str):
+async def reconcile_payment(payment_intent_id: str, _: dict = Depends(require_permission("write:reconcile"))):
     """Trigger on-demand reconciliation and resolution pipeline for an intent."""
     try:
         pid = uuid.UUID(payment_intent_id)
@@ -92,13 +93,13 @@ async def reconcile_payment(payment_intent_id: str):
 
 
 @router.post("/{payment_intent_id}/resolve")
-async def resolve_payment(payment_intent_id: str):
+async def resolve_payment(payment_intent_id: str, _: dict = Depends(require_permission("write:reconcile"))):
     """Trigger manual or automated resolution for an intent."""
     return await reconcile_payment(payment_intent_id)
 
 
 @router.get("/evidence/{payment_intent_id}")
-async def get_payment_evidence(payment_intent_id: str):
+async def get_payment_evidence(payment_intent_id: str, _: dict = Depends(require_permission("read:payments"))):
     """Fetch immutable audit evidence trail for a specific payment intent."""
     pool = await get_pool()
     try:

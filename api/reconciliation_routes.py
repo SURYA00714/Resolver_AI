@@ -3,10 +3,11 @@
 import uuid
 from decimal import Decimal
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
 import asyncpg
+from core.rbac import require_permission
 from db.connection import get_pool
 
 router = APIRouter(prefix="/cases", tags=["cases"])
@@ -19,7 +20,7 @@ class ManualCaseResolveRequest(BaseModel):
 
 
 @router.get("")
-async def list_cases(status: Optional[str] = None):
+async def list_cases(status: Optional[str] = None, _: dict = Depends(require_permission("read:cases"))):
     """List operational reconciliation cases, optionally filtered by status (OPEN, IN_PROGRESS, RESOLVED)."""
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -35,7 +36,7 @@ async def list_cases(status: Optional[str] = None):
 
 
 @router.get("/{case_id}")
-async def get_case(case_id: str):
+async def get_case(case_id: str, _: dict = Depends(require_permission("read:cases"))):
     """Fetch details of a specific reconciliation case."""
     pool = await get_pool()
     try:
@@ -52,7 +53,7 @@ async def get_case(case_id: str):
 
 
 @router.post("/{case_id}/manual-resolve")
-async def manual_resolve_case(case_id: str, req: ManualCaseResolveRequest):
+async def manual_resolve_case(case_id: str, req: ManualCaseResolveRequest, _: dict = Depends(require_permission("write:resolve_case"))):
     """Perform operator manual resolution on an ambiguous payment case."""
     pool = await get_pool()
     try:

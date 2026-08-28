@@ -36,6 +36,8 @@ class DetectiveResult(AgentMessage):
     evidence: List[str] = Field(default_factory=list)
     recommended_action: ActionType = ActionType.VERIFY
     recommended_verification: str = "CHECK_EXTERNAL_STATUS"
+    provider_name: str = "Deterministic Rule Engine"  # Set by detective.py — displayed in UI
+
 
 
 # --- Negotiator Output ---

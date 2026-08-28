@@ -10,6 +10,7 @@ import asyncpg
 from fastapi import APIRouter, Header, HTTPException, Request
 
 from core.idempotency import is_event_processed, mark_event_processed
+from core.rate_limiter import is_rate_limited
 from db.connection import get_pool
 from domain.errors import WebhookSignatureError
 from razorpay.webhooks import verify_webhook_signature
@@ -33,10 +34,12 @@ async def handle_razorpay_webhook(
     6. Enqueue durable outbox resolution task
     """
     raw_body = await request.body()
+    correlation_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
 
     # Step 1: Signature Verification
-    if not verify_webhook_signature(raw_body, x_razorpay_signature or ""):
-        print("[WEBHOOK] Invalid Razorpay webhook signature!", file=sys.stderr)
+    signature_valid = verify_webhook_signature(raw_body, x_razorpay_signature or "")
+    if not signature_valid:
+        print(f"[WEBHOOK] Invalid Razorpay webhook signature! correlation_id={correlation_id}", file=sys.stderr)
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     # Step 2: Parse JSON Payload
@@ -77,7 +80,7 @@ async def handle_razorpay_webhook(
 
     source = "RAZORPAY"
     external_event_id = x_razorpay_event_id or data.get("event_id") or f"evt_{uuid.uuid4().hex[:12]}"
-    trace_id = data.get("trace_id") or uuid.uuid4().hex[:16]
+    trace_id = data.get("trace_id") or correlation_id
 
     # Step 3: Fast-Path Redis Deduplication
     if await is_event_processed(source, external_event_id):
@@ -92,9 +95,9 @@ async def handle_razorpay_webhook(
         try:
             await conn.execute(
                 """INSERT INTO payment_events
-                   (payment_intent_id, source, external_event_id, external_transaction_id, event_type, payload, payload_hash, trace_id)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
-                payment_intent_id, source, external_event_id, razorpay_payment_id, event_type, payload_json, payload_hash, trace_id,
+                   (payment_intent_id, source, external_event_id, external_transaction_id, event_type, payload, payload_hash, trace_id, correlation_id, signature_verified)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
+                payment_intent_id, source, external_event_id, razorpay_payment_id, event_type, payload_json, payload_hash, trace_id, correlation_id, signature_valid,
             )
         except asyncpg.UniqueViolationError:
             await mark_event_processed(source, external_event_id)
@@ -104,7 +107,7 @@ async def handle_razorpay_webhook(
         await conn.execute(
             """INSERT INTO payment_intents
                (payment_intent_id, merchant_reference, order_id, razorpay_order_id, active_payment_id, merchant_id, amount, currency, current_state, active_rail)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'PENDING_RAIL', 'RAZORPAY_TEST')
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'PENDING_RAIL', 'RAZORPAY')
                ON CONFLICT (payment_intent_id) DO UPDATE SET
                  razorpay_order_id = COALESCE(EXCLUDED.razorpay_order_id, payment_intents.razorpay_order_id),
                  active_payment_id = COALESCE(EXCLUDED.active_payment_id, payment_intents.active_payment_id),
@@ -124,6 +127,7 @@ async def handle_razorpay_webhook(
                 "razorpay_order_id": razorpay_order_id,
                 "event_type": event_type,
                 "trace_id": trace_id,
+                "correlation_id": correlation_id,
             }),
         )
 
@@ -135,10 +139,21 @@ async def handle_razorpay_webhook(
         "payment_intent_id": str(payment_intent_id),
         "razorpay_payment_id": razorpay_payment_id,
         "trace_id": trace_id,
+        "correlation_id": correlation_id,
     }
 
 
 @router.post("/webhook")
 async def handle_legacy_webhook(request: Request):
-    """Legacy webhook route compatibility."""
-    return await handle_razorpay_webhook(request, x_razorpay_signature="", x_razorpay_event_id="")
+    """Deprecated webhook route — redirects to the authenticated endpoint.
+    
+    SECURITY: This route does NOT bypass signature verification.
+    Use POST /webhook/razorpay with the X-Razorpay-Signature header.
+    """
+    raise HTTPException(
+        status_code=400,
+        detail={
+            "error": "deprecated_endpoint",
+            "message": "Use POST /webhook/razorpay with X-Razorpay-Signature header.",
+        }
+    )

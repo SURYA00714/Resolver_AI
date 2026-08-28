@@ -138,10 +138,13 @@ export default function PaymentsPage() {
                     <StatusBadge status={p.current_state} />
                   </td>
                   <td style={{ padding: '14px 20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                    {p.active_rail || 'RAZORPAY_TEST'}
+                    {p.active_rail || 'RAZORPAY'}
                   </td>
                   <td style={{ padding: '14px 20px', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
                     {new Date(p.updated_at).toLocaleTimeString()}
+                    {p.updated_at && new Date(p.updated_at) > new Date(Date.now() - 300000) && (
+                      <span style={{ marginLeft: '6px', fontSize: '0.65rem', color: '#2AB673', fontWeight: 600 }}>LIVE</span>
+                    )}
                   </td>
                   <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>

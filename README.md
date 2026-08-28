@@ -1,196 +1,214 @@
-# ResolverAI — AI Payment Integrity & Recovery Platform
-> *"Don't guess what happened to a payment. Verify it, resolve it, and prove it."*
+# ResolverAI — Merchant Payment Integrity & Recovery Platform
+
+A production-grade **merchant-side payment operations control plane** for Razorpay.
 
 ---
 
-## 🌟 Executive Summary & Judge Narrative
+## What ResolverAI Is
 
-**ResolverAI** is a merchant-side payment operations, integrity, and recovery platform built for the **Razorpay AI Buildathon**.
+ResolverAI is a real payment integrity platform — not a demo, not a simulation.
 
-In distributed payment processing, payment gateways (like Razorpay) and merchant application databases frequently disagree due to asynchronous webhook delays, network dropouts, out-of-order event delivery, and bank timeouts. 
+It connects to **your actual Razorpay account** (or runs in synthetic mode without credentials) to:
 
-When a payment times out or hangs in an ambiguous state, traditional merchant software faces a critical dilemma: **blindly retry and risk double-charging the customer**, or **mark the transaction as failed and lose revenue**.
-
-ResolverAI solves this by acting as a merchant-side control plane above Razorpay:
-
-```
-  AI Investigates  ➔  Evidence Verifies  ➔  Policy Authorizes  ➔  Execution Acts  ➔  Reconciliation Closes
-```
-
-1. **AI Investigates**: Formulates hypotheses about what went wrong without mutating payment state.
-2. **Evidence Verifies**: Gathers authoritative ground truth directly from read-only Razorpay APIs.
-3. **Policy Authorizes**: Evaluates a 5-rule deterministic safety gate to produce a signed `AuthorizedAction`.
-4. **Execution Acts**: Executes the mutation (Capture or Refund) *only* if authorized by policy.
-5. **Reconciliation Closes**: Persists an immutable evidence trail in PostgreSQL to prove what happened.
+1. **Receive Razorpay webhooks** with HMAC-SHA256 signature verification
+2. **Persist payment state** in a 15-state deterministic state machine (PostgreSQL)
+3. **Run rule-based anomaly detection** to classify payment failures
+4. **Execute recovery actions** (capture, refund) via the Razorpay API
+5. **Maintain audit trails** for all mutations with idempotency guarantees
+6. **Expose a real-time control plane** for payment operations
 
 ---
 
-## 🏗️ System Architecture & Data Flow
-
-ResolverAI sits **ABOVE** Razorpay as a merchant-side control plane. It does not replace Razorpay, nor does it connect directly to internal bank switches.
+## Architecture
 
 ```
-                    ┌─────────────────────────┐
-                    │      Razorpay API       │
-                    └────────────┬────────────┘
-                                 │ Webhook Events / API Calls
-                                 ▼
-┌───────────────────────────────────────────────────────────────────────────┐
-│                          RESOLVERAI CONTROL PLANE                         │
-│                                                                           │
-│  ┌───────────────────────┐         ┌───────────────────────────────────┐  │
-│  │ Webhook Ingestion     │ ──────> │ Fast-Path Redis Deduplication     │  │
-│  │ (HMAC-SHA256 Signed)  │         └─────────────────┬─────────────────┘  │
-│  └───────────┬───────────┘                           │                    │
-│              │                                       ▼                    │
-│              │                     ┌───────────────────────────────────┐  │
-│              └───────────────────> │ PostgreSQL Immutability Storage   │  │
-│                                    │ (Triggers Block UPDATE/DELETE)    │  │
-│                                    └─────────────────┬─────────────────┘  │
-│                                                      │ Outbox Pattern     │
-│                                                      ▼                    │
-│                                    ┌───────────────────────────────────┐  │
-│                                    │ Background Resolution Worker      │  │
-│                                    │ (FOR UPDATE SKIP LOCKED)          │  │
-│                                    └─────────────────┬─────────────────┘  │
-│                                                      │                    │
-│                                                      ▼                    │
-│  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │                         RESOLUTION PIPELINE                         │  │
-│  │                                                                     │  │
-│  │   1. AI Detective ──────> Formulates advisory hypothesis            │  │
-│  │   2. Evidence Agent ────> Queries Razorpay APIs for ground truth    │  │
-│  │   3. Policy Engine  ────> Validates 5 deterministic safety rules    │  │
-│  │   4. FinOps Executor ───> Executes authorized mutation on Razorpay │  │
-│  └─────────────────────────────────────────────────────────────────────┘  │
-└───────────────────────────────────────────────────────────────────────────┘
+Razorpay API
+    │
+    ▼
+POST /webhook/razorpay   ← HMAC-SHA256 verification
+    │
+    ▼
+PostgreSQL Outbox        ← Transactional outbox pattern
+    │
+    ▼
+Outbox Worker            ← Exponential backoff, dead-letter
+    │
+    ▼
+Core Resolver
+  ├── Detective Agent    ← Rule engine (or Gemini/Groq if configured)
+  ├── Negotiator         ← Fetch live Razorpay state
+  ├── Policy Engine      ← Deterministic decision rules
+  └── FinOps Executor    ← Real Razorpay API mutations
+    │
+    ▼
+Next.js Frontend         ← Payment operations control plane
 ```
 
 ---
 
-## 📐 The Three Truths Architecture
+## What Is Real
 
-ResolverAI strictly separates data into three distinct architectural layers to prevent state corruption:
+| Component | What's Real |
+|---|---|
+| Webhook receiver | HMAC-SHA256 signature verification on every webhook |
+| Payment state machine | 15 deterministic states, enforced by code |
+| Outbox pattern | PostgreSQL transactional outbox with FOR UPDATE SKIP LOCKED |
+| Idempotency | Redis-based distributed locking + DB UNIQUE constraints |
+| Razorpay API | Real capture/refund via Razorpay REST API (when credentials set) |
+| Order creation | `POST /orders` → real Razorpay order entity |
+| Audit trail | Immutable event log in PostgreSQL |
+| Exponential backoff | Worker retries with `2^attempts` second delay |
+| Dead-letter queue | Events exceeding MAX_ATTEMPTS → DEAD_LETTER status |
 
-| Layer | System Table | Description | Properties |
-| :--- | :--- | :--- | :--- |
-| **1. Event Truth** | `payment_events` | Raw, immutable inbound webhook events received from Razorpay. | Append-Only, HMAC Verified, DB Trigger Locked |
-| **2. Operational Truth** | `payment_intents` | Merchant's current operational state (15 distinct lifecycle states). | Mutable, Transactionally Locked |
-| **3. Evidence Truth** | `immutable_evidence` | Audit trail of AI hypotheses, policy decisions, and execution tokens. | Database-Enforced Append-Only Immutability |
+## What Requires Configuration
 
----
+| Feature | Environment Variable |
+|---|---|
+| Real Razorpay API calls | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` |
+| Webhook signature verification | `RAZORPAY_WEBHOOK_SECRET` |
+| Gemini AI advisory | `GEMINI_API_KEY` + `AI_MODE=ENABLED` |
+| Groq AI advisory | `GROQ_API_KEY` + `AI_MODE=ENABLED` |
 
-## 🛡️ AI Safety Model: The 5-Rule Policy Gate
-
-The AI Detective is treated as the **least trusted component** in the architecture. It is strictly **advisory** and cannot directly execute financial mutations.
-
-Before any money is moved or payment captured, the **Deterministic Policy Engine** evaluates 5 mandatory rules:
-
-1. **RULE 1 (State Validity)**: Payment intent must be in a state permitting resolution (`UNCERTAIN`, `VERIFYING`, `DUPLICATE_SUSPECTED`).
-2. **RULE 2 (Verified External Evidence)**: Gateway state must be explicitly confirmed (`CAPTURED`, `AUTHORIZED`, `FAILED`), never `UNKNOWN`.
-3. **RULE 3 (Economic Identity)**: Payment ID, Order ID, Amount (`Decimal`), and Currency must match merchant intent.
-4. **RULE 4 (Duplicate Protection)**: Prevents duplicate captures across local database history and external gateway state.
-5. **RULE 5 (Bounded Action)**: Proposed mutation must logically fit the external state.
-
-If any rule fails, the action is rejected and escalated to `MANUAL_REVIEW`.
-
----
-
-## 🚦 Payment Lifecycle State Machine
-
-ResolverAI implements a 15-state deterministic state machine:
-
-```
-CREATED ➔ PENDING_RAIL ➔ UNCERTAIN ➔ VERIFYING ➔ AUTHORIZED ➔ CAPTURED ➔ RECONCILED
-                              │                                  │
-                              ├─> DUPLICATE_SUSPECTED ───────────┼─> REFUNDED
-                              │                                  │
-                              └─> MANUAL_REVIEW ─────────────────┘
-```
-
-- **Non-Regression Rule**: Payment state can never regress backwards (e.g., `CAPTURED` can never regress to `AUTHORIZED` even if an out-of-order webhook arrives).
-- **Timeout Safety Rule**: A network timeout transitions state to `UNCERTAIN`, **NEVER** directly to `FAILED`.
+Without these, the platform runs in **SYNTHETIC mode** — all state is local, no Razorpay API calls are made. This is clearly indicated in the UI.
 
 ---
 
-## ⚡ Quickstart Guide ($0 Cost Local Setup)
+## Setup
 
-### 1. Prerequisites
-- Docker & Docker Compose
-- Python 3.12+
+### Prerequisites
+- Python 3.11+
+- PostgreSQL 14+
+- Redis 7+ (optional — falls back to in-memory)
+- Node.js 18+
 
-### 2. Configure Environment (`.env`)
+### Backend
+
 ```bash
+# 1. Copy environment file
 cp .env.example .env
+
+# 2. Edit .env with your Razorpay credentials
+nano .env
+
+# 3. Start dependencies (PostgreSQL + Redis)
+docker compose up -d
+
+# 4. Start backend
+python3 -m uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
+# 5. Start worker (separate terminal)
+python3 worker.py
 ```
 
-Default configuration for local Docker PostgreSQL and Redis:
-```ini
-DATABASE_URL=postgresql://resolver:resolver@localhost:5432/resolverai
-REDIS_URL=redis://localhost:6379/0
-AI_MODE=DETERMINISTIC
-RAZORPAY_MODE=TEST
-RAZORPAY_KEY_ID=rzp_test_xxxxxx
-RAZORPAY_KEY_SECRET=xxxxxxxxxxxx
-RAZORPAY_WEBHOOK_SECRET=your_webhook_secret_here
-ENVIRONMENT=development
-```
+### Frontend
 
-### 3. Start Local Database & Redis
 ```bash
-sudo docker compose up -d
+cd frontend
+npm install
+npm run dev
 ```
 
-### 4. Install Dependencies
-```bash
-pip install --break-system-packages -r requirements.txt
-```
+Access at: `http://localhost:3000`
+API docs at: `http://localhost:8000/docs`
 
-### 5. Launch ResolverAI Platform
+### One-command start
+
 ```bash
-PORT=8501 bash start.sh
+bash start_all.sh
 ```
 
 ---
 
-## 🎮 Operational Modes
+## Environment Variables
 
-### Mode A: Real Razorpay Test Mode
-Connects directly to Razorpay's official Test Mode APIs and verifies real HMAC-SHA256 signatures (`X-Razorpay-Signature`) on webhooks delivered via `ngrok`.
-
-### Mode B: Local Reliability Lab (Chaos Testing)
-Segregated fault-injection laboratory (`chaos_lab/`) to stress-test failure conditions:
-- **Late Authorization**: Simulates bank timeouts followed by delayed authorization callbacks.
-- **Out-of-Order Webhooks**: Simulates `payment.captured` arriving before `payment.authorized`.
-- **Duplicate Execution**: Simulates duplicate callbacks and retries.
-
----
-
-## 🔗 Key API Endpoints
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/webhook/razorpay` | HMAC-SHA256 verified Razorpay webhook ingestion endpoint |
-| `GET` | `/payments/{id}` | Fetch payment intent state and operational details |
-| `GET` | `/payments/{id}/timeline` | Retrieve chronological event timeline for a payment |
-| `POST` | `/payments/{id}/reconcile` | Manually trigger reconciliation pipeline for a payment |
-| `GET` | `/cases` | List operational reconciliation cases |
-| `POST` | `/cases/{id}/manual-resolve` | Resolve escalation case with operator audit trail |
-| `GET` | `/health` | Liveness health check |
-| `GET` | `/health/ready` | Readiness check verifying PostgreSQL and Redis connectivity |
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://...` | PostgreSQL connection string |
+| `REDIS_URL` | `redis://localhost:6379` | Redis URL (optional) |
+| `RAZORPAY_KEY_ID` | — | Razorpay Key ID (rzp_test_ or rzp_live_) |
+| `RAZORPAY_KEY_SECRET` | — | Razorpay Key Secret |
+| `RAZORPAY_WEBHOOK_SECRET` | — | Webhook signing secret |
+| `RAZORPAY_MODE` | `SYNTHETIC` | `TEST`, `LIVE`, or `SYNTHETIC` |
+| `AI_MODE` | `DETERMINISTIC` | `DETERMINISTIC` or `ENABLED` |
+| `GEMINI_API_KEY` | — | Google Gemini API key (optional) |
+| `GROQ_API_KEY` | — | Groq API key (optional) |
+| `ENVIRONMENT` | `development` | `development` or `production` |
 
 ---
 
-## 🛡️ Production Readiness vs Hackathon Scope
+## API Endpoints
 
-### Production-Minded Design Principles Implemented:
-- ✅ Database-level immutability triggers blocking `UPDATE`/`DELETE` on evidence.
-- ✅ Durable outbox pattern with `FOR UPDATE SKIP LOCKED` for zero dropped tasks.
-- ✅ HMAC-SHA256 webhook signature validation on raw request bytes.
-- ✅ `Decimal` monetary precision preventing floating-point rounding errors.
-- ✅ Strict separation between advisory AI hypotheses and policy execution.
+### Core
+- `GET /health` — Backend health + mode
+- `GET /integrations/health` — Real-time Razorpay connectivity check
 
-### Requirements for Live Production Deployment:
-- PCI-DSS Compliance certification.
-- Production Razorpay Merchant Account credentials.
-- Multi-region PostgreSQL replication & KMS secrets management.
+### Payments
+- `GET /payments` — List payment intents
+- `GET /payments/{id}` — Payment intent detail
+- `POST /payments/{id}/reconcile` — Trigger resolution
+- `GET /payments/{id}/verify` — Live Razorpay snapshot
+
+### Orders
+- `POST /orders` — Create a real Razorpay order
+- `GET /orders/{razorpay_order_id}` — Fetch order with payments
+
+### Webhooks
+- `POST /webhook/razorpay` — Razorpay webhook receiver (HMAC verified)
+- `GET /webhooks` — Webhook event history
+- `GET /webhooks/{id}` — Webhook event detail
+- `POST /webhooks/{id}/replay` — Internal event replay
+
+### Reconciliation
+- `GET /cases` — Reconciliation cases
+- `POST /cases/{id}/manual-resolve` — Operator resolution
+
+### Dashboard
+- `GET /dashboard/stats` — KPI aggregates
+- `GET /audit` — Audit event log
+- `GET /outbox/dead-letters` — Dead-letter events
+
+### Engineering (local only)
+- `POST /engineering/chaos/late-auth` — Inject late authorization test
+- `POST /engineering/chaos/cross-rail` — Inject duplicate execution test
+- `POST /engineering/chaos/out-of-order` — Inject out-of-order webhook test
+
+---
+
+## AI Provider
+
+The "AI" in ResolverAI is named honestly:
+
+| Config | What It Uses |
+|---|---|
+| Default (no API key) | **Deterministic Rule Engine** — explicit audit-able rules |
+| `GEMINI_API_KEY` + `AI_MODE=ENABLED` | **Gemini AI Advisory** — LLM analysis layer |
+| `GROQ_API_KEY` + `AI_MODE=ENABLED` | **Groq AI Advisory** — LLM analysis layer |
+
+The provider name is shown in the UI next to every recommendation. The AI layer is **advisory only** — it cannot authorize financial actions.
+
+---
+
+## Honesty Contract
+
+> "Never fabricate external state. Never fabricate AI. Never fabricate financial outcomes."
+
+- No demo buttons in the main product UI
+- No synthetic payments presented as real
+- Engineering chaos tools are clearly labeled LOCAL ENGINEERING TEST ONLY
+- Every webhook shows its source (RAZORPAY vs SYNTHETIC)
+- Signature verification failures are recorded and visible
+- The integration health page shows exactly what is and isn't connected
+
+---
+
+## Tests
+
+```bash
+python3 -m pytest tests/ -v
+```
+
+---
+
+## License
+
+MIT

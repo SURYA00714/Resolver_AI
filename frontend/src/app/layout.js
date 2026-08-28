@@ -1,5 +1,8 @@
+'use client';
+
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
+import AuthGuard from '@/components/AuthGuard';
 
 export const metadata = {
   title: 'ResolverAI — Payment Integrity Control Plane',
@@ -13,7 +16,9 @@ export default function RootLayout({ children }) {
         <div style={{ display: 'flex', width: '100vw', minHeight: '100vh' }}>
           <Sidebar />
           <main style={{ flex: 1, padding: '32px 40px', overflowY: 'auto', maxWidth: '1400px', margin: '0 auto' }}>
-            {children}
+            <AuthGuard>
+              {children}
+            </AuthGuard>
           </main>
         </div>
       </body>
