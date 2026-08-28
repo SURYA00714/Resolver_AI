@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import { ShieldCheck, AlertTriangle } from 'lucide-react';
+import { api, setToken } from '@/lib/api';
+import { ShieldCheck, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState('operator');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,10 +18,12 @@ export default function LoginPage() {
     const check = async () => {
       try {
         const me = await api.getAuthMe();
-        if (me.authenticated) {
+        if (me && me.authenticated) {
           router.replace('/');
         }
-      } catch {}
+      } catch (err) {
+        // Silently catch session check failure on initial page load
+      }
     };
     check();
   }, [router]);
@@ -31,9 +34,18 @@ export default function LoginPage() {
     setError('');
     try {
       const res = await api.login(username, password, role);
-      api.setToken(res.access_token);
-      router.replace('/');
+      if (res && res.access_token) {
+        if (typeof api.setToken === 'function') {
+          api.setToken(res.access_token);
+        } else if (typeof setToken === 'function') {
+          setToken(res.access_token);
+        }
+        router.replace('/');
+      } else {
+        throw new Error('Authentication succeeded but no access token was returned.');
+      }
     } catch (err) {
+      console.error('Login Error:', err);
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
@@ -69,8 +81,8 @@ export default function LoginPage() {
             background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)',
             display: 'flex', alignItems: 'center', gap: '8px', color: '#F87171', fontSize: '0.85rem',
           }}>
-            <AlertTriangle size={16} />
-            {error}
+            <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+            <span>{error}</span>
           </div>
         )}
 
@@ -91,16 +103,40 @@ export default function LoginPage() {
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#94A3B8', marginBottom: '6px' }}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              style={{
-                width: '100%', padding: '10px 14px', background: '#0A0F1A',
-                border: '1px solid #1E2535', borderRadius: '8px', color: '#E2E8F0', fontSize: '0.9rem',
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                style={{
+                  width: '100%', padding: '10px 40px 10px 14px', background: '#0A0F1A',
+                  border: '1px solid #1E2535', borderRadius: '8px', color: '#E2E8F0', fontSize: '0.9rem',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748B',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#94A3B8', marginBottom: '6px' }}>Role</label>

@@ -4,10 +4,12 @@ let _token = typeof window !== 'undefined' ? localStorage.getItem('resolverai_to
 
 export function setToken(token) {
   _token = token;
-  if (token) {
-    localStorage.setItem('resolverai_token', token);
-  } else {
-    localStorage.removeItem('resolverai_token');
+  if (typeof window !== 'undefined') {
+    if (token) {
+      localStorage.setItem('resolverai_token', token);
+    } else {
+      localStorage.removeItem('resolverai_token');
+    }
   }
 }
 
@@ -17,7 +19,9 @@ export function getToken() {
 
 export function clearToken() {
   _token = null;
-  localStorage.removeItem('resolverai_token');
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('resolverai_token');
+  }
 }
 
 async function fetchApi(endpoint, options = {}) {
@@ -41,7 +45,16 @@ async function fetchApi(endpoint, options = {}) {
     }
     if (!res.ok) {
       const errData = await res.json().catch(() => ({ detail: res.statusText }));
-      const detail = typeof errData.detail === 'object' ? errData.detail.message : errData.detail;
+      let detail = 'API Error';
+      if (errData && errData.detail) {
+        if (typeof errData.detail === 'object') {
+          detail = errData.detail.message || JSON.stringify(errData.detail);
+        } else {
+          detail = errData.detail;
+        }
+      } else if (errData && errData.message) {
+        detail = errData.message;
+      }
       throw new Error(detail || `API error ${res.status}`);
     }
     return await res.json();
@@ -52,6 +65,9 @@ async function fetchApi(endpoint, options = {}) {
 }
 
 export const api = {
+  setToken,
+  getToken,
+  clearToken,
   // ── Auth ──────────────────────────────────────────
   login: (username, password, role) => fetchApi('/auth/login', {
     method: 'POST',
