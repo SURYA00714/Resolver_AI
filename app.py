@@ -34,6 +34,10 @@ _allowed_origins = [o.strip() for o in config.ALLOWED_ORIGINS if o.strip()]
 if not _allowed_origins:
     _allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
+# Ensure Vercel is always allowed, regardless of Render env variables
+if "https://resolver-ai-beryl.vercel.app" not in _allowed_origins:
+    _allowed_origins.append("https://resolver-ai-beryl.vercel.app")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
