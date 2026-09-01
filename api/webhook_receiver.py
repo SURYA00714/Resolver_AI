@@ -85,12 +85,17 @@ async def handle_razorpay_webhook(
     external_event_id = x_razorpay_event_id or data.get("event_id") or f"evt_{uuid.uuid4().hex[:12]}"
     trace_id = data.get("trace_id") or correlation_id
 
-    # Step 3: Fast-Path Redis Deduplication
-    if await is_event_processed(source, external_event_id):
+    from core.idempotency import verify_idempotency_payload
+    payload_hash = hashlib.sha256(raw_body).hexdigest()[:32]
+
+    # Step 3: Fast-Path Redis Deduplication & Payload Match Verification
+    dedup_check = await verify_idempotency_payload(source, external_event_id, payload_hash)
+    if dedup_check == "PAYLOAD_MISMATCH":
+        raise HTTPException(status_code=409, detail="Idempotency key payload mismatch")
+    elif dedup_check == "VALID_DUPLICATE":
         return {"status": "ignored", "reason": "duplicate event (redis)"}
 
     payload_json = json.dumps(data, sort_keys=True, default=str)
-    payload_hash = hashlib.sha256(raw_body).hexdigest()[:32]
 
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -103,7 +108,7 @@ async def handle_razorpay_webhook(
                 payment_intent_id, merchant_id, source, external_event_id, razorpay_payment_id, event_type, payload_json, payload_hash, trace_id, correlation_id, signature_valid,
             )
         except asyncpg.UniqueViolationError:
-            await mark_event_processed(source, external_event_id)
+            await mark_event_processed(source, external_event_id, payload_hash=payload_hash)
             return {"status": "ignored", "reason": "duplicate event (db)"}
 
         # Step 5: Upsert Payment Intent
@@ -140,7 +145,7 @@ async def handle_razorpay_webhook(
         )
 
     # Mark as processed in Redis
-    await mark_event_processed(source, external_event_id)
+    await mark_event_processed(source, external_event_id, payload_hash=payload_hash)
 
     return {
         "status": "accepted",

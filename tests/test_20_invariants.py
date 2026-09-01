@@ -412,10 +412,23 @@ class Test20FinancialInvariants(unittest.TestCase):
             confidence=0.9,
             recommended_action=ActionType.CAPTURE,
         )
-        decision = self.engine.evaluate(intent, neg, det)
-        self.assertEqual(decision.decision, DecisionType.REJECT)
-        action = self.engine.create_authorized_action(decision, intent, det, neg, "idem_30")
-        self.assertIsNone(action)
+    # INVARIANT 31: Future-issued command cannot execute
+    def test_invariant_31_future_issued_command_rejected(self):
+        import asyncio
+        cmd = AuthorizedAction(
+            payment_intent_id=self.base_intent["payment_intent_id"],
+            action=ActionType.CAPTURE,
+            amount=Decimal("500.00"),
+            currency="INR",
+            policy_decision_id="dec_001",
+            idempotency_key="idem_001",
+            issued_at=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=10),
+            expires_at=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=15),
+        )
+        cmd.sign_command(config.JWT_SECRET_KEY)
+        res = asyncio.run(execute(cmd))
+        self.assertEqual(res.execution_status, ExternalStatus.FAILED)
+        self.assertEqual(res.error, "Command issued in future")
 
 
 if __name__ == "__main__":

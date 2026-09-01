@@ -91,10 +91,12 @@ class AuthorizedAction(BaseModel):
         """Compute cryptographic HMAC-SHA256 signature for financial capability verification."""
         import hashlib
         import hmac
+        issued_str = self.issued_at.isoformat() if self.issued_at else ""
+        expires_str = self.expires_at.isoformat() if self.expires_at else ""
         payload = (
             f"{self.command_id}|{self.payment_intent_id}|{self.merchant_id}|"
             f"{self.action.value}|{self.amount}|{self.currency}|{self.idempotency_key}|"
-            f"{self.policy_decision_id}"
+            f"{self.policy_decision_id}|{issued_str}|{expires_str}"
         )
         return hmac.new(
             key=secret_key.encode("utf-8"),

@@ -49,6 +49,21 @@ async def execute(
             error="Command expired",
         )
 
+    # Future issue check (prevent post-dated token exploitation / clock skew exploitation)
+    issued = command.issued_at if command.issued_at.tzinfo else command.issued_at.replace(tzinfo=datetime.timezone.utc)
+    if issued > now + datetime.timedelta(seconds=5):
+        print(f"[FINOPS] Rejecting command {command.command_id}: Command issued in FUTURE", file=sys.stderr)
+        return FinOpsResult(
+            payment_intent_id=command.payment_intent_id,
+            trace_id=trace_id or "",
+            command_id=command.command_id,
+            action_taken=command.action,
+            execution_status=ExternalStatus.FAILED,
+            amount=command.amount,
+            currency=command.currency,
+            error="Command issued in future",
+        )
+
     # Capability token signature verification
     if command.action in (ActionType.CAPTURE, ActionType.REFUND, ActionType.VOID):
         if not command.signature:

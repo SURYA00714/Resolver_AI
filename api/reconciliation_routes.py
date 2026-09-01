@@ -19,24 +19,38 @@ class ManualCaseResolveRequest(BaseModel):
     action: str = "MANUAL_RESOLVE"  # CAPTURE, REFUND, VOID, CLOSE
 
 
+from api.payment_routes import verify_merchant_access
+
+
 @router.get("")
-async def list_cases(status: Optional[str] = None, _: dict = Depends(require_permission("read:cases"))):
+async def list_cases(status: Optional[str] = None, user: dict = Depends(require_permission("read:cases"))):
     """List operational reconciliation cases, optionally filtered by status (OPEN, IN_PROGRESS, RESOLVED)."""
     pool = await get_pool()
+    merchant_id = user.get("merchant_id")
+    user_role = user.get("role")
     async with pool.acquire() as conn:
-        if status:
-            rows = await conn.fetch(
-                "SELECT * FROM reconciliation_cases WHERE status = $1 ORDER BY opened_at DESC",
-                status.upper(),
-            )
+        if user_role == "admin" or not merchant_id:
+            if status:
+                rows = await conn.fetch(
+                    "SELECT * FROM reconciliation_cases WHERE status = $1 ORDER BY opened_at DESC",
+                    status.upper(),
+                )
+            else:
+                rows = await conn.fetch("SELECT * FROM reconciliation_cases ORDER BY opened_at DESC")
         else:
-            rows = await conn.fetch("SELECT * FROM reconciliation_cases ORDER BY opened_at DESC")
+            if status:
+                rows = await conn.fetch(
+                    "SELECT * FROM reconciliation_cases WHERE merchant_id = $1 AND status = $2 ORDER BY opened_at DESC",
+                    merchant_id, status.upper(),
+                )
+            else:
+                rows = await conn.fetch("SELECT * FROM reconciliation_cases WHERE merchant_id = $1 ORDER BY opened_at DESC", merchant_id)
 
         return [{k: str(v) if isinstance(v, (uuid.UUID, Decimal)) else v for k, v in dict(r).items()} for r in rows]
 
 
 @router.get("/{case_id}")
-async def get_case(case_id: str, _: dict = Depends(require_permission("read:cases"))):
+async def get_case(case_id: str, user: dict = Depends(require_permission("read:cases"))):
     """Fetch details of a specific reconciliation case."""
     pool = await get_pool()
     try:
@@ -49,12 +63,13 @@ async def get_case(case_id: str, _: dict = Depends(require_permission("read:case
         if not row:
             raise HTTPException(status_code=404, detail="Case not found")
 
+        verify_merchant_access(user, row["merchant_id"])
         return {k: str(v) if isinstance(v, (uuid.UUID, Decimal)) else v for k, v in dict(row).items()}
 
 
 @router.post("/manual-resolve/{case_id}")
 @router.post("/{case_id}/manual-resolve")
-async def manual_resolve_case(case_id: str, req: ManualCaseResolveRequest, _: dict = Depends(require_permission("write:resolve_case"))):
+async def manual_resolve_case(case_id: str, req: ManualCaseResolveRequest, user: dict = Depends(require_permission("write:resolve_case"))):
     """Perform operator manual resolution on an ambiguous payment case."""
     pool = await get_pool()
     try:
@@ -70,6 +85,7 @@ async def manual_resolve_case(case_id: str, req: ManualCaseResolveRequest, _: di
         if not case_row:
             raise HTTPException(status_code=404, detail="Case not found")
 
+        verify_merchant_access(user, case_row["merchant_id"])
         intent_id = case_row["payment_intent_id"]
 
         # Update case status
@@ -108,12 +124,19 @@ async def manual_resolve_case(case_id: str, req: ManualCaseResolveRequest, _: di
 
 
 @router.post("/replay/{payment_intent_id}", tags=["replay"])
-async def forensic_replay(payment_intent_id: str, _: dict = Depends(require_permission("read:cases"))):
+async def forensic_replay(payment_intent_id: str, user: dict = Depends(require_permission("read:cases"))):
     """Perform a 100% read-only forensic replay for a payment intent. Zero side effects."""
     try:
         pid = uuid.UUID(payment_intent_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid payment_intent_id UUID format")
+
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        intent = await conn.fetchrow("SELECT merchant_id FROM payment_intents WHERE payment_intent_id = $1", pid)
+        if not intent:
+            raise HTTPException(status_code=404, detail="Payment intent not found")
+        verify_merchant_access(user, intent["merchant_id"])
 
     from core.replay import replay_intent
     result = await replay_intent(pid)
