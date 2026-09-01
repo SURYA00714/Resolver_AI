@@ -131,10 +131,11 @@ async def resolve(payment_intent_id: uuid.UUID, trace_id: Optional[str] = None) 
             try:
                 await conn.execute(
                     """INSERT INTO external_executions
-                       (payment_intent_id, provider, rail_id, external_txn_id, operation, amount, status, idempotency_key)
-                       VALUES ($1, 'RAZORPAY', $2, $3, 'VERIFY', $4, $5, $6)
+                       (payment_intent_id, merchant_id, provider, rail_id, external_txn_id, operation, amount, status, idempotency_key)
+                       VALUES ($1, $2, 'RAZORPAY', $3, $4, 'VERIFY', $5, $6, $7)
                        ON CONFLICT (idempotency_key) DO NOTHING""",
                     payment_intent_id,
+                    intent_data["merchant_id"],
                     negotiator_result.rail,
                     negotiator_result.external_transaction_id,
                     intent_data["amount"],
@@ -183,9 +184,11 @@ async def resolve(payment_intent_id: uuid.UUID, trace_id: Optional[str] = None) 
                     # Open a Reconciliation Case for operator review
                     await conn.execute(
                         """INSERT INTO reconciliation_cases
-                           (payment_intent_id, case_type, severity, status, reason)
-                           VALUES ($1, 'UNRESOLVED_AMBIGUITY', 'HIGH', 'OPEN', $2)""",
+                           (payment_intent_id, merchant_id, case_type, divergence_type, severity, status, reason)
+                           VALUES ($1, $2, 'UNRESOLVED_AMBIGUITY', $3, 'HIGH', 'OPEN', $4)""",
                         payment_intent_id,
+                        intent_data["merchant_id"],
+                        recon_res.divergence_type.value,
                         f"Policy rejected: {policy_decision.reason}. Reconciliation status: {recon_res.status}",
                     )
 
@@ -202,6 +205,7 @@ async def resolve(payment_intent_id: uuid.UUID, trace_id: Optional[str] = None) 
             await record_evidence(
                 conn=conn,
                 payment_intent_id=payment_intent_id,
+                merchant_id=intent_data["merchant_id"],
                 action=action_taken,
                 amount=intent_data["amount"],
                 currency=intent_data["currency"],

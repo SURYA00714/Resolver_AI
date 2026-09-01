@@ -41,15 +41,45 @@ def _log(level: str, event: str, **kwargs):
     print(json.dumps(entry), file=sys.stderr)
 
 
+async def reclaim_stuck_tasks(lease_timeout_seconds: int = 60) -> int:
+    """Reclaim tasks stuck in PROCESSING due to worker crash/SIGKILL."""
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        result = await conn.execute(
+            """UPDATE outbox_events
+               SET status = 'PENDING',
+                   available_at = NOW(),
+                   last_error = 'Reclaimed after worker crash/lease timeout'
+               WHERE status = 'PROCESSING'
+                 AND processing_started_at IS NOT NULL
+                 AND processing_started_at <= NOW() - ($1 * INTERVAL '1 second')""",
+            lease_timeout_seconds,
+        )
+        # Extract count from 'UPDATE <n>'
+        try:
+            count = int(result.split(" ")[1])
+        except Exception:
+            count = 0
+        if count > 0:
+            _log("WARN", "stuck_tasks_reclaimed", count=count, lease_timeout_seconds=lease_timeout_seconds)
+        return count
+
+
 async def claim_and_process() -> int:
     """Claim one available pending outbox event and process it. Returns 1 if processed, 0 if idle."""
     pool = await get_pool()
+    
+    # First, reclaim any crashed/stuck tasks
+    await reclaim_stuck_tasks()
+
     async with pool.acquire() as conn:
         # Claim the oldest available pending event (atomic via UPDATE ... RETURNING)
-        # Respects available_at for exponential backoff
+        # Respects available_at for exponential backoff and sets processing_started_at
         row = await conn.fetchrow(
             """UPDATE outbox_events
-               SET status = 'PROCESSING', attempts = attempts + 1
+               SET status = 'PROCESSING',
+                   attempts = attempts + 1,
+                   processing_started_at = NOW()
                WHERE outbox_id = (
                    SELECT outbox_id FROM outbox_events
                    WHERE status = 'PENDING'
@@ -59,7 +89,7 @@ async def claim_and_process() -> int:
                    LIMIT 1
                    FOR UPDATE SKIP LOCKED
                )
-               RETURNING outbox_id, event_type, aggregate_id, payload, attempts""",
+               RETURNING outbox_id, event_type, aggregate_id, merchant_id, payload, attempts""",
             MAX_ATTEMPTS,
         )
 

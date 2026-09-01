@@ -34,7 +34,6 @@ async def execute(
     3. Mandatory policy decision ID & idempotency key
     """
     now = datetime.datetime.now(datetime.timezone.utc)
-
     # Expiration check
     expires = command.expires_at if command.expires_at.tzinfo else command.expires_at.replace(tzinfo=datetime.timezone.utc)
     if now > expires:
@@ -49,6 +48,33 @@ async def execute(
             currency=command.currency,
             error="Command expired",
         )
+
+    # Capability token signature verification
+    if command.action in (ActionType.CAPTURE, ActionType.REFUND, ActionType.VOID):
+        if not command.signature:
+            print(f"[FINOPS] Rejecting command {command.command_id}: Missing capability token signature", file=sys.stderr)
+            return FinOpsResult(
+                payment_intent_id=command.payment_intent_id,
+                trace_id=trace_id or "",
+                command_id=command.command_id,
+                action_taken=command.action,
+                execution_status=ExternalStatus.FAILED,
+                amount=command.amount,
+                currency=command.currency,
+                error="Missing capability token signature",
+            )
+        if not command.verify_signature(config.JWT_SECRET_KEY):
+            print(f"[FINOPS] Rejecting command {command.command_id}: Signature VERIFICATION_FAILED", file=sys.stderr)
+            return FinOpsResult(
+                payment_intent_id=command.payment_intent_id,
+                trace_id=trace_id or "",
+                command_id=command.command_id,
+                action_taken=command.action,
+                execution_status=ExternalStatus.FAILED,
+                amount=command.amount,
+                currency=command.currency,
+                error="Invalid capability token signature",
+            )
 
     if command.amount <= 0 and command.action != ActionType.NO_ACTION:
         return FinOpsResult(

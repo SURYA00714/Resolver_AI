@@ -21,8 +21,15 @@ class ManualResolveRequest(BaseModel):
     action: str  # CAPTURE, REFUND, VOID, CLOSE
 
 
+def verify_merchant_access(user: dict, row_merchant_id: str):
+    user_merchant = user.get("merchant_id")
+    user_role = user.get("role")
+    if user_role != "admin" and user_merchant and user_merchant != row_merchant_id:
+        raise HTTPException(status_code=403, detail="Cross-tenant access forbidden: merchant_id mismatch")
+
+
 @router.get("/{payment_intent_id}")
-async def get_payment_intent(payment_intent_id: str, _: dict = Depends(require_permission("read:payments"))):
+async def get_payment_intent(payment_intent_id: str, user: dict = Depends(require_permission("read:payments"))):
     """Fetch operational details for a specific payment intent."""
     pool = await get_pool()
     try:
@@ -41,11 +48,13 @@ async def get_payment_intent(payment_intent_id: str, _: dict = Depends(require_p
         if not row:
             raise HTTPException(status_code=404, detail="Payment intent not found")
 
+        verify_merchant_access(user, row["merchant_id"])
+
         return {k: str(v) if isinstance(v, (uuid.UUID, Decimal)) else v for k, v in dict(row).items()}
 
 
 @router.get("/{payment_intent_id}/timeline")
-async def get_payment_timeline(payment_intent_id: str, _: dict = Depends(require_permission("read:payments"))):
+async def get_payment_timeline(payment_intent_id: str, user: dict = Depends(require_permission("read:payments"))):
     """Fetch complete chronological event timeline, evidence, and execution records."""
     pool = await get_pool()
     try:
@@ -57,6 +66,8 @@ async def get_payment_timeline(payment_intent_id: str, _: dict = Depends(require
         intent = await conn.fetchrow("SELECT * FROM payment_intents WHERE payment_intent_id = $1", pid)
         if not intent:
             raise HTTPException(status_code=404, detail="Payment intent not found")
+
+        verify_merchant_access(user, intent["merchant_id"])
 
         events = await conn.fetch(
             "SELECT event_id, source, external_event_id, event_type, received_at, trace_id FROM payment_events WHERE payment_intent_id = $1 ORDER BY received_at ASC",
@@ -81,25 +92,32 @@ async def get_payment_timeline(payment_intent_id: str, _: dict = Depends(require
 
 
 @router.post("/{payment_intent_id}/reconcile")
-async def reconcile_payment(payment_intent_id: str, _: dict = Depends(require_permission("write:reconcile"))):
+async def reconcile_payment(payment_intent_id: str, user: dict = Depends(require_permission("write:reconcile"))):
     """Trigger on-demand reconciliation and resolution pipeline for an intent."""
     try:
         pid = uuid.UUID(payment_intent_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid payment_intent_id UUID format")
 
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        intent = await conn.fetchrow("SELECT merchant_id FROM payment_intents WHERE payment_intent_id = $1", pid)
+        if not intent:
+            raise HTTPException(status_code=404, detail="Payment intent not found")
+        verify_merchant_access(user, intent["merchant_id"])
+
     result = await resolve(pid)
     return result
 
 
 @router.post("/{payment_intent_id}/resolve")
-async def resolve_payment(payment_intent_id: str, _: dict = Depends(require_permission("write:reconcile"))):
+async def resolve_payment(payment_intent_id: str, user: dict = Depends(require_permission("write:reconcile"))):
     """Trigger manual or automated resolution for an intent."""
-    return await reconcile_payment(payment_intent_id)
+    return await reconcile_payment(payment_intent_id, user=user)
 
 
 @router.get("/evidence/{payment_intent_id}")
-async def get_payment_evidence(payment_intent_id: str, _: dict = Depends(require_permission("read:payments"))):
+async def get_payment_evidence(payment_intent_id: str, user: dict = Depends(require_permission("read:payments"))):
     """Fetch immutable audit evidence trail for a specific payment intent."""
     pool = await get_pool()
     try:
@@ -108,6 +126,11 @@ async def get_payment_evidence(payment_intent_id: str, _: dict = Depends(require
         raise HTTPException(status_code=400, detail="Invalid payment_intent_id UUID format")
 
     async with pool.acquire() as conn:
+        intent = await conn.fetchrow("SELECT merchant_id FROM payment_intents WHERE payment_intent_id = $1", pid)
+        if not intent:
+            raise HTTPException(status_code=404, detail="Payment intent not found")
+        verify_merchant_access(user, intent["merchant_id"])
+
         evidence = await conn.fetch(
             "SELECT * FROM immutable_evidence WHERE payment_intent_id = $1 ORDER BY created_at ASC",
             pid,

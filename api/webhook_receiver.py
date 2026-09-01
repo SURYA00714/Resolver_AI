@@ -60,6 +60,7 @@ async def handle_razorpay_webhook(
     razorpay_order_id = payment_entity.get("order_id") or order_entity.get("id")
     notes = payment_entity.get("notes") or order_entity.get("notes") or {}
 
+    merchant_id = notes.get("merchant_id") or "default_merchant"
     merchant_ref = notes.get("merchant_reference") or notes.get("merchant_order_id")
     order_id = razorpay_order_id or merchant_ref or f"ORD_{uuid.uuid4().hex[:8]}"
 
@@ -74,9 +75,11 @@ async def handle_razorpay_webhook(
         payment_intent_id = uuid.uuid5(uuid.NAMESPACE_DNS, str(order_id))
 
     # Parse Amount (Razorpay delivers amount in paise)
+    from domain.money import minor_units_to_decimal, validate_currency
     amount_raw = payment_entity.get("amount") or order_entity.get("amount") or refund_entity.get("amount") or 0
-    amount = Decimal(str(amount_raw)) / Decimal("100") if amount_raw > 0 else Decimal("0.00")
-    currency = payment_entity.get("currency") or order_entity.get("currency") or "INR"
+    raw_curr = payment_entity.get("currency") or order_entity.get("currency") or "INR"
+    currency = validate_currency(raw_curr)
+    amount = minor_units_to_decimal(int(amount_raw), currency) if amount_raw > 0 else Decimal("0.00")
 
     source = "RAZORPAY"
     external_event_id = x_razorpay_event_id or data.get("event_id") or f"evt_{uuid.uuid4().hex[:12]}"
@@ -95,9 +98,9 @@ async def handle_razorpay_webhook(
         try:
             await conn.execute(
                 """INSERT INTO payment_events
-                   (payment_intent_id, source, external_event_id, external_transaction_id, event_type, payload, payload_hash, trace_id, correlation_id, signature_verified)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
-                payment_intent_id, source, external_event_id, razorpay_payment_id, event_type, payload_json, payload_hash, trace_id, correlation_id, signature_valid,
+                   (payment_intent_id, merchant_id, source, external_event_id, external_transaction_id, event_type, payload, payload_hash, trace_id, correlation_id, signature_verified)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)""",
+                payment_intent_id, merchant_id, source, external_event_id, razorpay_payment_id, event_type, payload_json, payload_hash, trace_id, correlation_id, signature_valid,
             )
         except asyncpg.UniqueViolationError:
             await mark_event_processed(source, external_event_id)
@@ -106,23 +109,28 @@ async def handle_razorpay_webhook(
         # Step 5: Upsert Payment Intent
         await conn.execute(
             """INSERT INTO payment_intents
-               (payment_intent_id, merchant_reference, order_id, razorpay_order_id, active_payment_id, merchant_id, amount, currency, current_state, active_rail)
+               (payment_intent_id, merchant_id, merchant_reference, order_id, razorpay_order_id, active_payment_id, amount, currency, current_state, active_rail)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'PENDING_RAIL', 'RAZORPAY')
                ON CONFLICT (payment_intent_id) DO UPDATE SET
                  razorpay_order_id = COALESCE(EXCLUDED.razorpay_order_id, payment_intents.razorpay_order_id),
                  active_payment_id = COALESCE(EXCLUDED.active_payment_id, payment_intents.active_payment_id),
                  amount = CASE WHEN EXCLUDED.amount > 0 THEN EXCLUDED.amount ELSE payment_intents.amount END,
                  updated_at = NOW()""",
-            payment_intent_id, merchant_ref, order_id, razorpay_order_id, razorpay_payment_id, "default_merchant", amount, currency,
+            payment_intent_id, merchant_id, merchant_ref, order_id, razorpay_order_id, razorpay_payment_id, amount, currency,
         )
 
-        # Step 6: Create Durable Outbox Task for Resolution Engine
+        # Step 6: Create Durable Outbox Task for Resolution Engine (with unique idempotency_key)
+        outbox_idempotency_key = f"outbox_evt_{source}_{external_event_id}"
         await conn.execute(
-            """INSERT INTO outbox_events (event_type, aggregate_id, payload, status)
-               VALUES ('RESOLVE_INTENT', $1, $2, 'PENDING')""",
+            """INSERT INTO outbox_events (event_type, aggregate_id, merchant_id, idempotency_key, payload, status)
+               VALUES ('RESOLVE_INTENT', $1, $2, $3, $4, 'PENDING')
+               ON CONFLICT (idempotency_key) DO NOTHING""",
             str(payment_intent_id),
+            merchant_id,
+            outbox_idempotency_key,
             json.dumps({
                 "payment_intent_id": str(payment_intent_id),
+                "merchant_id": merchant_id,
                 "razorpay_payment_id": razorpay_payment_id,
                 "razorpay_order_id": razorpay_order_id,
                 "event_type": event_type,

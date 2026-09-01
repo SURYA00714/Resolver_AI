@@ -44,7 +44,7 @@ class CreateOrderRequest(BaseModel):
 
 
 @router.post("", summary="Create a real Razorpay order")
-async def create_razorpay_order(req: CreateOrderRequest, _: dict = Depends(require_permission("write:create_order"))):
+async def create_razorpay_order(req: CreateOrderRequest, user: dict = Depends(require_permission("write:create_order"))):
     """
     Create a real Razorpay order via the Razorpay Orders API.
 
@@ -54,6 +54,7 @@ async def create_razorpay_order(req: CreateOrderRequest, _: dict = Depends(requi
 
     Requires RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to be configured.
     """
+    merchant_id = user.get("merchant_id", "default_merchant")
     if not config.RAZORPAY_KEY_ID or not config.RAZORPAY_KEY_SECRET:
         raise HTTPException(
             status_code=503,
@@ -67,6 +68,7 @@ async def create_razorpay_order(req: CreateOrderRequest, _: dict = Depends(requi
     payment_intent_id = uuid.uuid4()
     notes = req.notes or {}
     notes["payment_intent_id"] = str(payment_intent_id)
+    notes["merchant_id"] = merchant_id
     notes["resolverai_version"] = "1.0"
     if req.receipt:
         notes["receipt"] = req.receipt
@@ -106,7 +108,7 @@ async def create_razorpay_order(req: CreateOrderRequest, _: dict = Depends(requi
             req.receipt,
             razorpay_order_id,          # local order_id = razorpay_order_id
             razorpay_order_id,          # razorpay_order_id explicitly
-            "default_merchant",
+            merchant_id,
             req.amount,
             req.currency,
         )

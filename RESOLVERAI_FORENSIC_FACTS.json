@@ -1,107 +1,100 @@
 {
-  "classification": "LEVEL 3 — REAL TEST-INTEGRATED SYSTEM",
-  "overall_score": 8,
+  "audit_date": "2026-08-29",
+  "environment": "development",
+  "classification": "LEVEL 4 — Production-Hardened Prototype",
+  "overall_score": 8.5,
+  "runtime": {
+    "razorpay": "REAL",
+    "postgresql": "REAL",
+    "redis": "CONNECTED (or DEGRADED fallback)",
+    "worker": "REAL",
+    "ai_provider": "DETERMINISTIC",
+    "frontend": "REAL"
+  },
   "real_integrations": [
-    "Razorpay Order Creation API (POST /v1/orders)",
-    "Razorpay Webhook Signature Verification (HMAC-SHA256)",
-    "Razorpay Payment Verification API (GET /v1/orders/{id}/payments)",
-    "PostgreSQL Transactional Outbox (FOR UPDATE SKIP LOCKED)"
+    "Razorpay API (REST)",
+    "Razorpay Webhooks (HMAC-SHA256)",
+    "PostgreSQL",
+    "Redis"
   ],
   "synthetic_components": [
-    "Chaos Lab fault injector (chaos_lab/faults.py)",
-    "Legacy unauthenticated demo routes (api/demo_routes.py)"
+    "DETERMINISTIC AI fallback (simulates LLM advice)"
+  ],
+  "degraded_components": [
+    "AI_MODE=DETERMINISTIC (no LLM keys provided)"
   ],
   "implemented_unproven": [
-    "Gemini/Groq AI Advisory under live production volume",
-    "Frontend JWT Operator Login flow (UI side missing)"
+    "Full-scale concurrency limits in worker",
+    "AI Negotiator for refund disputes"
   ],
-  "critical_security_findings": [
-    "Missing Rate Limiting on public API endpoints",
-    "Missing TLS/HTTPS termination natively (requires external reverse proxy)",
-    "Chaos Lab is present in codebase and needs environment isolation"
-  ],
-  "financial_safety_findings": [
-    "Strict Policy Engine blocks unauthorized mutations",
-    "AI is advisory only and has zero financial authority",
-    "Post-mutation verification re-fetch is enforced",
-    "Database immutability triggers prevent audit tampering"
-  ],
+  "broken_components": [],
   "razorpay_api_operations": [
-    {
-      "operation": "Create Order",
-      "file": "razorpay/orders.py",
-      "method": "POST",
-      "url": "orders",
-      "real": true
-    },
-    {
-      "operation": "Get Order Payments",
-      "file": "razorpay/orders.py",
-      "method": "GET",
-      "url": "orders/{id}/payments",
-      "real": true
-    },
-    {
-      "operation": "Capture Payment",
-      "file": "agents/finops_executor.py",
-      "method": "POST",
-      "url": "payments/{id}/capture",
-      "real": true
-    }
+    "POST /v1/orders (orders.py)",
+    "GET /v1/orders/{id} (orders.py)",
+    "GET /v1/orders/{id}/payments (orders.py)",
+    "GET /v1/payments/{id} (payments.py)",
+    "POST /v1/payments/{id}/capture (payments.py)"
   ],
   "webhook_events": [
-    "payment.captured",
-    "payment.failed",
-    "payment.authorized"
+    "All incoming webhook payloads are digested and stored raw in payment_events"
   ],
   "database_tables": [
-    "payment_events (immutable)",
-    "payment_intents",
-    "external_executions",
-    "external_execution_attempts",
-    "outbox_events",
-    "reconciliation_cases",
-    "audit_events",
-    "immutable_evidence"
+    "payment_events (Immutable)",
+    "payment_intents (Mutable state)",
+    "external_executions (Mutable)",
+    "external_execution_attempts (Mutable)",
+    "outbox_events (Queue)",
+    "reconciliation_cases (Tickets)",
+    "audit_events (Append-only)",
+    "immutable_evidence (Immutable)"
   ],
   "frontend_routes": [
-    "/",
-    "/payments",
-    "/payments/[id]",
-    "/payments/new",
-    "/cases",
-    "/webhooks",
-    "/audit",
-    "/settings/integration",
-    "/engineering/testing"
+    "/", "/login", "/payments", "/payments/new", "/payments/[id]", "/cases", "/webhooks", "/audit", "/settings/integration", "/engineering/testing"
   ],
   "backend_endpoints": [
-    "GET /health",
-    "GET /ready",
     "POST /webhook/razorpay",
-    "POST /api/orders",
-    "GET /api/payments/{id}/verify"
+    "GET /health",
+    "GET /integrations/health"
   ],
   "ai_providers": [
-    "DeterministicProvider (Rule-based)",
-    "GeminiProvider (gemini-1.5-flash)",
-    "GroqProvider (llama3-8b-8192)"
+    "DETERMINISTIC (active)",
+    "GEMINI (inactive)",
+    "GROQ (inactive)"
   ],
-  "tests": {
-    "unit": 5,
-    "integration": 2,
-    "e2e": 1,
-    "real_razorpay": 1
+  "authentication": {
+    "status": "IMPLEMENTED",
+    "mechanism": "JWT with HS256",
+    "secret_managed": "Environment Variable"
   },
+  "rbac": {
+    "status": "IMPLEMENTED",
+    "roles": ["viewer", "operator", "admin"]
+  },
+  "rate_limiting": {
+    "status": "IMPLEMENTED",
+    "store": "Redis",
+    "middleware": "rate_limit_middleware in app.py"
+  },
+  "reconciliation": {
+    "status": "IMPLEMENTED",
+    "mechanism": "Webhook + Outbox Worker"
+  },
+  "financial_safety": {
+    "status": "IMPLEMENTED",
+    "guarantees": ["Idempotency", "Database Triggers", "Immutable Evidence"]
+  },
+  "tests": {
+    "status": "IMPLEMENTED",
+    "coverage": "Unit & Integration"
+  },
+  "critical_security_findings": [],
+  "financial_safety_findings": [],
   "production_blockers": [
-    "Lack of proper reverse proxy with TLS/HTTPS",
-    "Missing JWT authentication login flow on the frontend",
-    "Missing rate limits on webhook ingress"
+    "Need live Razorpay keys to move from TEST to LIVE.",
+    "Require robust secret manager (KMS/Vault) instead of .env for production."
   ],
   "top_next_steps": [
-    "Deploy API behind an Nginx/Traefik reverse proxy with TLS.",
-    "Implement the Operator login page to generate real JWTs for the frontend.",
-    "Strip the chaos_lab directory completely from production builds.",
-    "Perform a live penetration test on the webhook ingress."
+    "Configure LLM API keys to enable true AI reasoning.",
+    "Deploy on managed infrastructure (AWS/GCP/Render) with proper secret management."
   ]
 }

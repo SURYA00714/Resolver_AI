@@ -42,8 +42,8 @@ def _base64url_decode(data: str) -> bytes:
     return base64.urlsafe_b64decode(data.encode("utf-8"))
 
 
-def create_access_token(username: str, role: str = "operator") -> str:
-    """Create a signed JWT access token for a given user and role."""
+def create_access_token(username: str, role: str = "operator", merchant_id: str = "default_merchant") -> str:
+    """Create a signed JWT access token for a given user, role, and merchant_id."""
     if role not in VALID_ROLES:
         raise ValueError(f"Invalid role: {role}. Must be one of {VALID_ROLES}")
     header = {"alg": ALGORITHM, "typ": "JWT"}
@@ -51,6 +51,7 @@ def create_access_token(username: str, role: str = "operator") -> str:
     payload = {
         "sub": username,
         "role": role,
+        "merchant_id": merchant_id,
         "permissions": config.RBAC_ROLES[role]["permissions"],
         "iat": now,
         "exp": now + TOKEN_EXPIRE_SECONDS,

@@ -69,6 +69,7 @@ class PolicyDecision(BaseModel):
 class AuthorizedAction(BaseModel):
     command_id: str = Field(default_factory=lambda: uuid.uuid4().hex[:16])
     payment_intent_id: str
+    merchant_id: str = "default_merchant"
     action: ActionType
     amount: Decimal
     currency: str = "INR"
@@ -77,10 +78,42 @@ class AuthorizedAction(BaseModel):
     razorpay_order_id: Optional[str] = None
     policy_decision_id: str
     idempotency_key: str
+    issued_at: datetime.datetime = Field(
+        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
     expires_at: datetime.datetime = Field(
         default_factory=lambda: datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)
     )
     trace_id: Optional[str] = None
+    signature: Optional[str] = None
+
+    def compute_signature(self, secret_key: str) -> str:
+        """Compute cryptographic HMAC-SHA256 signature for financial capability verification."""
+        import hashlib
+        import hmac
+        payload = (
+            f"{self.command_id}|{self.payment_intent_id}|{self.merchant_id}|"
+            f"{self.action.value}|{self.amount}|{self.currency}|{self.idempotency_key}|"
+            f"{self.policy_decision_id}"
+        )
+        return hmac.new(
+            key=secret_key.encode("utf-8"),
+            msg=payload.encode("utf-8"),
+            digestmod=hashlib.sha256,
+        ).hexdigest()
+
+    def sign_command(self, secret_key: str) -> None:
+        """Sign the command with system secret key."""
+        self.signature = self.compute_signature(secret_key)
+
+    def verify_signature(self, secret_key: str) -> bool:
+        """Verify the capability token signature in constant time."""
+        import hmac
+        if not self.signature:
+            return False
+        expected = self.compute_signature(secret_key)
+        return hmac.compare_digest(self.signature.lower(), expected.lower())
+
 
 
 # --- FinOps Execution Result ---

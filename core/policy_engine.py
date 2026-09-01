@@ -105,8 +105,11 @@ class PolicyEngine:
         """Create typed AuthorizedAction command ONLY from an APPROVED policy decision."""
         if policy_decision.decision != DecisionType.APPROVE:
             return None
-        return AuthorizedAction(
+        
+        import config
+        cmd = AuthorizedAction(
             payment_intent_id=str(intent_data["payment_intent_id"]),
+            merchant_id=str(intent_data.get("merchant_id", "default_merchant")),
             action=detective_result.recommended_action,
             amount=Decimal(str(intent_data.get("amount", "0"))),
             currency=intent_data.get("currency", "INR"),
@@ -117,6 +120,8 @@ class PolicyEngine:
             idempotency_key=idempotency_key,
             trace_id=policy_decision.trace_id,
         )
+        cmd.sign_command(config.JWT_SECRET_KEY)
+        return cmd
 
     @staticmethod
     def _allowed_actions_for(state: str, ext_status: str) -> list[ActionType]:

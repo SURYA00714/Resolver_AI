@@ -21,10 +21,12 @@ async def capture_payment(
     Capture an authorized payment.
     Note: Razorpay API expects amount in sub-units (paise for INR).
     """
+    if currency and currency.upper() not in ("INR", "USD", "EUR", "GBP"):
+        raise ValueError(f"Unsupported or unverified currency for automatic sub-unit conversion: {currency}")
     client = get_razorpay_client()
     amount_in_paise = int(amount * 100)
     data = {
         "amount": amount_in_paise,
-        "currency": currency,
+        "currency": currency.upper() if currency else "INR",
     }
     return await client._request("POST", f"payments/{payment_id}/capture", data=data)

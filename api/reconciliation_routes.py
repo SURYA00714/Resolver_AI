@@ -52,6 +52,7 @@ async def get_case(case_id: str, _: dict = Depends(require_permission("read:case
         return {k: str(v) if isinstance(v, (uuid.UUID, Decimal)) else v for k, v in dict(row).items()}
 
 
+@router.post("/manual-resolve/{case_id}")
 @router.post("/{case_id}/manual-resolve")
 async def manual_resolve_case(case_id: str, req: ManualCaseResolveRequest, _: dict = Depends(require_permission("write:resolve_case"))):
     """Perform operator manual resolution on an ambiguous payment case."""
@@ -75,7 +76,7 @@ async def manual_resolve_case(case_id: str, req: ManualCaseResolveRequest, _: di
         await conn.execute(
             """UPDATE reconciliation_cases
                SET status = 'RESOLVED', resolved_at = NOW(),
-                   operator_id = $1, resolution_notes = $2
+                   assigned_operator = $1, resolution_notes = $2
                WHERE case_id = $3""",
             req.operator_id, req.resolution_notes, cid,
         )
@@ -104,3 +105,19 @@ async def manual_resolve_case(case_id: str, req: ManualCaseResolveRequest, _: di
             "operator_id": req.operator_id,
             "action": req.action,
         }
+
+
+@router.post("/replay/{payment_intent_id}", tags=["replay"])
+async def forensic_replay(payment_intent_id: str, _: dict = Depends(require_permission("read:cases"))):
+    """Perform a 100% read-only forensic replay for a payment intent. Zero side effects."""
+    try:
+        pid = uuid.UUID(payment_intent_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid payment_intent_id UUID format")
+
+    from core.replay import replay_intent
+    result = await replay_intent(pid)
+    if result.get("replay_status") == "ERROR":
+        raise HTTPException(status_code=404, detail=result.get("reason", "Payment intent not found"))
+    return result
+
