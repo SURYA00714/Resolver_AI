@@ -48,7 +48,21 @@ async def handle_razorpay_webhook(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {e}")
 
-    event_type = data.get("event", "UNKNOWN_EVENT")
+    raw_event_type = data.get("event", "UNKNOWN_EVENT")
+    # Consolidate into EXACTLY 4 supported webhook flows:
+    # 1. AUTHORIZED (payment.authorized)
+    # 2. CAPTURED (payment.captured)
+    # 3. FAILED (payment.failed)
+    # 4. REFUNDED (refund.processed / refund.created / payment.refunded)
+    WEBHOOK_FLOW_MAP = {
+        "payment.authorized": "payment.authorized",
+        "payment.captured": "payment.captured",
+        "payment.failed": "payment.failed",
+        "refund.processed": "refund.processed",
+        "refund.created": "refund.processed",
+        "payment.refunded": "refund.processed",
+    }
+    event_type = WEBHOOK_FLOW_MAP.get(raw_event_type, raw_event_type)
     payload_data = data.get("payload", {})
 
     # Extract payment entity or order entity
