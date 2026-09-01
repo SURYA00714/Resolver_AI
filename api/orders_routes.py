@@ -144,8 +144,11 @@ async def create_razorpay_order(req: CreateOrderRequest, user: dict = Depends(re
     }
 
 
+from api.payment_routes import verify_merchant_access
+
+
 @router.get("/{razorpay_order_id}", summary="Fetch a Razorpay order with payments")
-async def get_razorpay_order(razorpay_order_id: str, _: dict = Depends(require_permission("read:payments"))):
+async def get_razorpay_order(razorpay_order_id: str, user: dict = Depends(require_permission("read:payments"))):
     """
     Fetch a Razorpay order from the Razorpay API including all associated payments.
     Also returns the local payment_intent if it exists.
@@ -153,19 +156,21 @@ async def get_razorpay_order(razorpay_order_id: str, _: dict = Depends(require_p
     if not razorpay_order_id.startswith("order_"):
         raise HTTPException(status_code=400, detail="Invalid Razorpay order ID format. Expected 'order_...'")
 
+    # Look up local intent first to enforce merchant access boundary before external fetch
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        local = await conn.fetchrow(
+            "SELECT payment_intent_id, merchant_id, current_state, resolution_status, updated_at FROM payment_intents WHERE razorpay_order_id = $1",
+            razorpay_order_id,
+        )
+        if local:
+            verify_merchant_access(user, local["merchant_id"])
+
     try:
         order = await get_order(razorpay_order_id)
         payments = await get_order_payments(razorpay_order_id)
     except RazorpayAPIError as e:
         raise HTTPException(status_code=502, detail={"error": "razorpay_api_error", "message": str(e)})
-
-    # Also look up local intent
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        local = await conn.fetchrow(
-            "SELECT payment_intent_id, current_state, resolution_status, updated_at FROM payment_intents WHERE razorpay_order_id = $1",
-            razorpay_order_id,
-        )
 
     return {
         "razorpay_order": order,

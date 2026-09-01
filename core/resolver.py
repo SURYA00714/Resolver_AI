@@ -166,7 +166,26 @@ async def resolve(payment_intent_id: uuid.UUID, trace_id: Optional[str] = None) 
                     action_taken = finops_result.action_taken.value
                     print(f"[FINOPS] {intent_id_str[:8]} → action={action_taken}, status={finops_result.execution_status.value}", file=sys.stderr)
 
-                    if finops_result.execution_status in (ExternalStatus.SUCCESS, ExternalStatus.REFUNDED, ExternalStatus.VOIDED):
+                    if finops_result and finops_result.execution_status in (ExternalStatus.SUCCESS, ExternalStatus.REFUNDED, ExternalStatus.VOIDED):
+                        try:
+                            exec_idem_key = f"exec_{authorized.command_id}"
+                            await conn.execute(
+                                """INSERT INTO external_executions
+                                   (payment_intent_id, merchant_id, provider, rail_id, external_txn_id, operation, amount, status, idempotency_key)
+                                   VALUES ($1, $2, 'RAZORPAY', $3, $4, $5, $6, $7, $8)
+                                   ON CONFLICT (idempotency_key) DO NOTHING""",
+                                payment_intent_id,
+                                intent_data["merchant_id"],
+                                negotiator_result.rail,
+                                finops_result.external_transaction_id or authorized.razorpay_payment_id,
+                                action_taken,
+                                intent_data["amount"],
+                                finops_result.execution_status.value,
+                                exec_idem_key,
+                            )
+                        except Exception as ee:
+                            print(f"[RESOLVER] Mutation external_executions log error: {ee}", file=sys.stderr)
+
                         if authorized.action in (ActionType.CAPTURE, ActionType.NO_ACTION):
                             final_state = transition(intent_data["current_state"], "VERIFIED_SUCCESS")
                         elif authorized.action in (ActionType.VOID, ActionType.REFUND):

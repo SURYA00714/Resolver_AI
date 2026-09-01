@@ -39,8 +39,10 @@ async def get_financial_summary(conn: asyncpg.Connection, payment_intent_id: uui
 
     for row in rows:
         act = row["action"]
+        dec = row.get("decision") if hasattr(row, "get") else None
         amt = Decimal(str(row["amount"]))
-        if act in ("CAPTURE", "NO_ACTION"):
+        # Count CAPTURE only when decision was APPROVED or act is explicit CAPTURE
+        if act == "CAPTURE":
             captured += amt
         elif act == "REFUND":
             refunded += amt
@@ -60,7 +62,7 @@ async def get_system_financial_summary(conn: asyncpg.Connection) -> dict:
     """System-wide financial summary from all evidence."""
     row = await conn.fetchrow(
         """SELECT
-             COALESCE(SUM(CASE WHEN action IN ('CAPTURE', 'NO_ACTION') THEN amount ELSE 0 END), 0) as total_captured,
+             COALESCE(SUM(CASE WHEN action = 'CAPTURE' THEN amount ELSE 0 END), 0) as total_captured,
              COALESCE(SUM(CASE WHEN action = 'REFUND' THEN amount ELSE 0 END), 0) as total_refunded,
              COALESCE(SUM(CASE WHEN action = 'VOID' THEN amount ELSE 0 END), 0) as total_voided,
              COUNT(*) as total_actions
