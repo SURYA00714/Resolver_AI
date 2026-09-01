@@ -4,21 +4,41 @@ import sys
 import asyncpg
 from typing import Optional
 
-DB_URL = os.getenv("DATABASE_URL", "postgresql://resolver:resolver@localhost:5432/resolverai")
+import asyncio
+
+def get_db_url() -> str:
+    url = os.getenv("DATABASE_URL", "postgresql://resolver:resolver@localhost:5432/resolverai")
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    return url
 
 _pool: Optional[asyncpg.Pool] = None
 
 
-async def init_db() -> asyncpg.Pool:
+async def init_db(max_retries: int = 3, retry_interval: int = 1) -> asyncpg.Pool:
     global _pool
     if _pool is None:
-        try:
-            _pool = await asyncpg.create_pool(dsn=DB_URL)
-            from db.migrations import run_migrations
-            await run_migrations(_pool)
-        except Exception as e:
-            print(f"Database connection pool initialization error: {e}", file=sys.stderr)
-            raise e
+        db_url = get_db_url()
+        last_error = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                _pool = await asyncpg.create_pool(dsn=db_url)
+                if _pool:
+                    try:
+                        from db.migrations import run_migrations
+                        await run_migrations(_pool)
+                    except Exception as me:
+                        print(f"[DB] Migration notice: {me}", file=sys.stderr)
+                print(f"[DB] Connection pool initialized successfully (attempt {attempt})", file=sys.stderr)
+                return _pool
+            except Exception as e:
+                last_error = e
+                print(f"[DB] Connection pool attempt {attempt}/{max_retries} failed: {e}", file=sys.stderr)
+                if attempt < max_retries:
+                    await asyncio.sleep(retry_interval)
+
+        if last_error:
+            raise last_error
     return _pool
 
 

@@ -101,8 +101,10 @@ async def startup_event():
             file=sys.stderr,
         )
     except Exception as e:
-        print(f"[STARTUP] FATAL: Could not connect to database: {e}", file=sys.stderr)
-        raise
+        print(
+            f"[STARTUP] WARNING: Database connection failed during startup: {e}. Servicing requests in degraded mode.",
+            file=sys.stderr,
+        )
 
 
 @app.on_event("shutdown")

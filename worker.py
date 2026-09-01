@@ -166,8 +166,16 @@ async def claim_and_process() -> int:
 async def run_worker():
     """Main worker loop."""
     _log("INFO", "worker_start", poll_interval=POLL_INTERVAL, max_attempts=MAX_ATTEMPTS)
-    await init_db()
-    _log("INFO", "db_connected")
+
+    db_ready = False
+    while not db_ready:
+        try:
+            await init_db()
+            db_ready = True
+            _log("INFO", "db_connected")
+        except Exception as e:
+            _log("WARN", "db_connect_retry", error=str(e), retry_in_seconds=POLL_INTERVAL)
+            await asyncio.sleep(POLL_INTERVAL)
 
     try:
         while True:
