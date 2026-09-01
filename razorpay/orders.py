@@ -6,6 +6,9 @@ from decimal import Decimal
 from razorpay.client import get_razorpay_client
 
 
+from domain.money import decimal_to_minor_units
+
+
 async def create_order(
     amount: Decimal,
     currency: str = "INR",
@@ -14,14 +17,14 @@ async def create_order(
 ) -> Dict[str, Any]:
     """
     Create a new Razorpay order via POST /v1/orders.
-    Amount is converted to sub-units (paise for INR).
+    Amount is converted to sub-units (paise for INR, minor units for supported currencies).
     Returns the full Razorpay order entity.
     """
     client = get_razorpay_client()
-    amount_in_paise = int(amount * 100)
+    amount_in_minor_units = decimal_to_minor_units(amount, currency)
     data: Dict[str, Any] = {
-        "amount": amount_in_paise,
-        "currency": currency,
+        "amount": amount_in_minor_units,
+        "currency": currency.upper(),
     }
     if receipt:
         data["receipt"] = receipt
