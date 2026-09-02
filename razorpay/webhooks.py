@@ -39,3 +39,27 @@ def verify_webhook_signature(
     ).hexdigest()
 
     return hmac.compare_digest(expected_signature.lower(), signature.lower())
+
+
+def verify_payment_signature(
+    razorpay_order_id: str,
+    razorpay_payment_id: str,
+    signature: str,
+    secret: Optional[str] = None,
+) -> bool:
+    """
+    Verify Razorpay Checkout payment signature.
+    Formula: HMAC-SHA256(order_id + "|" + payment_id, RAZORPAY_KEY_SECRET)
+    """
+    key_secret = secret or config.RAZORPAY_KEY_SECRET
+    if not key_secret or not signature:
+        return False
+
+    msg = f"{razorpay_order_id}|{razorpay_payment_id}".encode("utf-8")
+    expected_signature = hmac.new(
+        key=key_secret.encode("utf-8"),
+        msg=msg,
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+
+    return hmac.compare_digest(expected_signature.lower(), signature.lower())

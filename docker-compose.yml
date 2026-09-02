@@ -16,7 +16,7 @@ services:
       timeout: 3s
       retries: 5
 
-  redis:
+  redis:        
     image: redis:7-alpine
     ports:
       - "6379:6379"

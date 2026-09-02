@@ -62,7 +62,8 @@ async def handle_razorpay_webhook(
         "refund.created": "refund.processed",
         "payment.refunded": "refund.processed",
     }
-    event_type = WEBHOOK_FLOW_MAP.get(raw_event_type, raw_event_type)
+    is_supported_flow = raw_event_type in WEBHOOK_FLOW_MAP
+    event_type = WEBHOOK_FLOW_MAP.get(raw_event_type, f"UNSUPPORTED_{raw_event_type}")
     payload_data = data.get("payload", {})
 
     # Extract payment entity or order entity
@@ -137,6 +138,15 @@ async def handle_razorpay_webhook(
                  updated_at = NOW()""",
             payment_intent_id, merchant_id, merchant_ref, order_id, razorpay_order_id, razorpay_payment_id, amount, currency,
         )
+
+        if not is_supported_flow:
+            await mark_event_processed(source, external_event_id, payload_hash=payload_hash)
+            return {
+                "status": "recorded",
+                "event_type": event_type,
+                "reason": "unsupported provider event persisted as raw evidence without state mutation",
+                "payment_intent_id": str(payment_intent_id),
+            }
 
         # Step 6: Create Durable Outbox Task for Resolution Engine (with unique idempotency_key)
         outbox_idempotency_key = f"outbox_evt_{source}_{external_event_id}"
