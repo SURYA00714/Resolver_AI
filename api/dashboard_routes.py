@@ -124,7 +124,10 @@ async def list_payments(
             "limit": limit,
             "offset": offset,
             "items": [
-                {k: str(v) if isinstance(v, (uuid.UUID, Decimal)) else v for k, v in dict(r).items()}
+                {
+                    **{k: str(v) if isinstance(v, (uuid.UUID, Decimal)) else v for k, v in dict(r).items()},
+                    "provenance": "REAL_RAZORPAY_WEBHOOK" if r.get("source") in ("RAZORPAY", "REAL_RAZORPAY_WEBHOOK") else "LOCAL_SIMULATION"
+                }
                 for r in rows
             ],
         }
@@ -207,7 +210,10 @@ async def list_webhooks(
             "limit": limit,
             "offset": offset,
             "items": [
-                {k: str(v) if isinstance(v, (uuid.UUID, Decimal)) else v for k, v in dict(r).items()}
+                {
+                    **{k: str(v) if isinstance(v, (uuid.UUID, Decimal)) else v for k, v in dict(r).items()},
+                    "provenance": "REAL_RAZORPAY_WEBHOOK" if r.get("source") in ("RAZORPAY", "REAL_RAZORPAY_WEBHOOK") else "LOCAL_SIMULATION"
+                }
                 for r in rows
             ],
         }
