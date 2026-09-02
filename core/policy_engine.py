@@ -75,6 +75,26 @@ class PolicyEngine:
                 trace_id=trace_id,
             )
 
+        # Rule 6 — CONFIDENCE GUARDRAIL: AI confidence must be >= 0.85
+        if detective_result.confidence < 0.85:
+            return PolicyDecision(
+                decision=DecisionType.MANUAL_REVIEW,
+                rule="RULE_6_CONFIDENCE_GUARDRAIL",
+                reason=f"AI confidence {detective_result.confidence:.2f} is below mandatory 0.85 threshold — escalating to HUMAN_REVIEW_REQUIRED",
+                trace_id=trace_id,
+            )
+
+        # Rule 7 — FINANCIAL AUTONOMY CAPS: Enforce tiered financial caps for refunds
+        if detective_result.recommended_action == ActionType.REFUND:
+            amount = Decimal(str(intent_data.get("amount", "0")))
+            if amount > Decimal("1000.00"):
+                return PolicyDecision(
+                    decision=DecisionType.MANUAL_REVIEW,
+                    rule="RULE_7_FINANCIAL_AUTONOMY_CAP",
+                    reason=f"Refund amount ₹{amount} exceeds autonomous limit ₹1,000.00 — escalating to HUMAN_REVIEW_REQUIRED",
+                    trace_id=trace_id,
+                )
+
         # Rule 5 — BOUNDED ACTION: Proposed action must be allowed for verified state
         action = detective_result.recommended_action
         allowed_actions = self._allowed_actions_for(state, ext_status)

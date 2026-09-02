@@ -54,13 +54,21 @@ async def handle_razorpay_webhook(
     # 2. CAPTURED (payment.captured)
     # 3. FAILED (payment.failed)
     # 4. REFUNDED (refund.processed / refund.created / payment.refunded)
+    # Generalized Razorpay Provider Event Mapping Matrix (§28)
     WEBHOOK_FLOW_MAP = {
         "payment.authorized": "payment.authorized",
         "payment.captured": "payment.captured",
         "payment.failed": "payment.failed",
+        "payment.dispute.created": "payment.dispute.created",
+        "payment.dispute.won": "payment.dispute.won",
+        "payment.dispute.lost": "payment.dispute.lost",
+        "refund.created": "refund.created",
+        "refund.failed": "refund.failed",
         "refund.processed": "refund.processed",
-        "refund.created": "refund.processed",
         "payment.refunded": "refund.processed",
+        "payout.initiated": "payout.initiated",
+        "payout.processed": "payout.processed",
+        "payout.reversed": "payout.reversed",
     }
     is_supported_flow = raw_event_type in WEBHOOK_FLOW_MAP
     event_type = WEBHOOK_FLOW_MAP.get(raw_event_type, f"UNSUPPORTED_{raw_event_type}")
@@ -194,3 +202,39 @@ async def handle_legacy_webhook(request: Request):
             "message": "Use POST /webhook/razorpay with X-Razorpay-Signature header.",
         }
     )
+
+
+@router.get("/webhook/diagnostics", summary="Production webhook diagnostics & stats")
+@router.get("/webhooks/diagnostics", summary="Production webhook diagnostics & stats (alias)")
+async def get_webhook_diagnostics():
+    """
+    Production webhook receiver diagnostics & real-time health.
+    Reports endpoint status, total events received, signature verification rates,
+    and database persistence status. Never exposes secret keys.
+    """
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        total_events = await conn.fetchval("SELECT COUNT(*) FROM payment_events")
+        verified_events = await conn.fetchval("SELECT COUNT(*) FROM payment_events WHERE signature_verified = TRUE")
+        unsupported_events = await conn.fetchval("SELECT COUNT(*) FROM payment_events WHERE event_type LIKE 'UNSUPPORTED_%'")
+        last_event = await conn.fetchrow("SELECT event_id, event_type, source, received_at, signature_verified FROM payment_events ORDER BY received_at DESC LIMIT 1")
+
+    return {
+        "webhook_endpoint_configured": True,
+        "public_webhook_url": "https://resolver-ai-l3ks.onrender.com/webhook/razorpay",
+        "environment": config.ENVIRONMENT,
+        "razorpay_mode": config.RAZORPAY_MODE,
+        "stats": {
+            "total_events_received": total_events or 0,
+            "total_verified_events": verified_events or 0,
+            "total_unsupported_events": unsupported_events or 0,
+        },
+        "database_persistence": "HEALTHY",
+        "last_event": {
+            "event_id": str(last_event["event_id"]) if last_event else None,
+            "event_type": last_event["event_type"] if last_event else None,
+            "source": last_event["source"] if last_event else None,
+            "received_at": str(last_event["received_at"]) if last_event else None,
+            "signature_verified": last_event["signature_verified"] if last_event else False,
+        } if last_event else None,
+    }
