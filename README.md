@@ -1,214 +1,1071 @@
-# ResolverAI — Merchant Payment Integrity & Recovery Platform
+ResolverAI
 
-A production-grade **merchant-side payment operations control plane** for Razorpay.
+AI-Powered Payment State Resolution & Integrity Platform for Razorpay
 
----
+ResolverAI is a merchant-side payment control plane designed to
+answer one critical question: "What actually happened to this
+payment?" --- even when payment systems, webhooks, networks, and
+clients disagree.
 
-## What ResolverAI Is
+ResolverAI was built for the Razorpay AI Buildathon with a simple
+philosophy:
 
-ResolverAI is a real payment integrity platform — not a demo, not a simulation.
+AI should not be allowed to guess financial truth. AI should
+investigate evidence, while deterministic systems protect money and
+state.
 
-It connects to **your actual Razorpay account** (or runs in synthetic mode without credentials) to:
+🏆 The Idea in One Minute
 
-1. **Receive Razorpay webhooks** with HMAC-SHA256 signature verification
-2. **Persist payment state** in a 15-state deterministic state machine (PostgreSQL)
-3. **Run rule-based anomaly detection** to classify payment failures
-4. **Execute recovery actions** (capture, refund) via the Razorpay API
-5. **Maintain audit trails** for all mutations with idempotency guarantees
-6. **Expose a real-time control plane** for payment operations
+Modern payment systems are extremely reliable under normal conditions.
 
----
+The difficult cases happen after the payment has already started:
 
-## Architecture
+The customer pays, but the browser disconnects.
 
-```
-Razorpay API
-    │
-    ▼
-POST /webhook/razorpay   ← HMAC-SHA256 verification
-    │
-    ▼
-PostgreSQL Outbox        ← Transactional outbox pattern
-    │
-    ▼
-Outbox Worker            ← Exponential backoff, dead-letter
-    │
-    ▼
-Core Resolver
-  ├── Detective Agent    ← Rule engine (or Gemini/Groq if configured)
-  ├── Negotiator         ← Fetch live Razorpay state
-  ├── Policy Engine      ← Deterministic decision rules
-  └── FinOps Executor    ← Real Razorpay API mutations
-    │
-    ▼
-Next.js Frontend         ← Payment operations control plane
-```
+Razorpay completes a transaction, but the merchant does not
+immediately receive the result.
 
----
+A webhook arrives late.
 
-## What Is Real
+The same webhook arrives twice.
 
-| Component | What's Real |
-|---|---|
-| Webhook receiver | HMAC-SHA256 signature verification on every webhook |
-| Payment state machine | 15 deterministic states, enforced by code |
-| Outbox pattern | PostgreSQL transactional outbox with FOR UPDATE SKIP LOCKED |
-| Idempotency | Redis-based distributed locking + DB UNIQUE constraints |
-| Razorpay API | Real capture/refund via Razorpay REST API (when credentials set) |
-| Order creation | `POST /orders` → real Razorpay order entity |
-| Audit trail | Immutable event log in PostgreSQL |
-| Exponential backoff | Worker retries with `2^attempts` second delay |
-| Dead-letter queue | Events exceeding MAX_ATTEMPTS → DEAD_LETTER status |
+A client retries the same verification request.
 
-## What Requires Configuration
+The payment appears PENDING, FAILED, or UNKNOWN from one
+perspective while another system says something different.
 
-| Feature | Environment Variable |
-|---|---|
-| Real Razorpay API calls | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` |
-| Webhook signature verification | `RAZORPAY_WEBHOOK_SECRET` |
-| Gemini AI advisory | `GEMINI_API_KEY` + `AI_MODE=ENABLED` |
-| Groq AI advisory | `GROQ_API_KEY` + `AI_MODE=ENABLED` |
+An operator needs to understand why a payment is stuck without
+manually reconstructing the entire timeline.
 
-Without these, the platform runs in **SYNTHETIC mode** — all state is local, no Razorpay API calls are made. This is clearly indicated in the UI.
+ResolverAI sits above the payment rail and turns these ambiguous
+situations into an auditable resolution workflow.
 
----
+                    RAZORPAY
+                       │
+          ┌────────────┴────────────┐
+          │                         │
+     Checkout / API             Webhooks
+          │                         │
+          └────────────┬────────────┘
+                       ▼
+                ┌───────────────┐
+                │  ResolverAI   │
+                │ Payment       │
+                │ Control Plane │
+                └───────┬───────┘
+                        │
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+     State Engine    Evidence      AI Detective
+          │             │             │
+          └─────────────┼─────────────┘
+                        ▼
+                  Policy Engine
+                        │
+                 ┌──────┴──────┐
+                 ▼             ▼
+             AUTOMATE       ESCALATE
+                 │             │
+                 ▼             ▼
+             Resolution    Human Review
 
-## Setup
+🎯 Problem We Chose
 
-### Prerequisites
-- Python 3.11+
-- PostgreSQL 14+
-- Redis 7+ (optional — falls back to in-memory)
-- Node.js 18+
+The hardest payment failure is not simply:
 
-### Backend
+"Payment failed."
 
-```bash
-# 1. Copy environment file
-cp .env.example .env
+It is:
 
-# 2. Edit .env with your Razorpay credentials
-nano .env
+"The systems disagree about the payment state."
 
-# 3. Start dependencies (PostgreSQL + Redis)
-docker compose up -d
+We call this the Asynchronous Post-Intent Disconnect.
 
-# 4. Start backend
-python3 -m uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+A merchant may have:
 
-# 5. Start worker (separate terminal)
-python3 worker.py
-```
+Customer → Checkout → Payment Rail → Razorpay
+                         │
+                         └── network disconnect
+                                  │
+                                  ▼
+                         Merchant doesn't know
+                         the final outcome
 
-### Frontend
+This creates dangerous ambiguity.
 
-```bash
+A naive system may retry.
+
+A naive system may mark the payment failed.
+
+A naive AI system may make a guess.
+
+ResolverAI takes a different approach:
+
+First establish financial truth. Then establish state consistency.
+Then decide what can safely be automated. AI comes after evidence, not
+before it.
+
+🧠 Our Core Design Philosophy
+
+ResolverAI follows this priority order:
+
+FINANCIAL CORRECTNESS
+        ↓
+STATE CONSISTENCY
+        ↓
+IDEMPOTENCY
+        ↓
+RECOVERABILITY
+        ↓
+AUDITABILITY
+        ↓
+AVAILABILITY
+        ↓
+LATENCY
+        ↓
+AI INTELLIGENCE
+
+This ordering is intentional.
+
+In a financial system, a highly intelligent system that makes an unsafe
+decision is worse than a conservative deterministic system.
+
+Our rule:
+
+AI recommends. Policy decides. Deterministic state transitions
+protect the system.
+
+🏗️ Architecture
+
+High-Level Components
+
+                         ┌──────────────────────┐
+                         │      Razorpay        │
+                         │ API + Checkout +     │
+                         │ Webhook Infrastructure│
+                         └──────────┬───────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │                               │
+                    ▼                               ▼
+             Order / Checkout                 Webhook Receiver
+                    │                               │
+                    └───────────────┬───────────────┘
+                                    ▼
+                           ┌─────────────────┐
+                           │ Payment Intent  │
+                           │ Registry        │
+                           └────────┬────────┘
+                                    │
+                   ┌────────────────┼────────────────┐
+                   ▼                ▼                ▼
+             State Machine      Evidence       Audit Trail
+                   │                │                │
+                   └────────────────┼────────────────┘
+                                    ▼
+                              Outbox Pattern
+                                    │
+                                    ▼
+                            Resolution Worker
+                                    │
+                         ┌──────────┴──────────┐
+                         ▼                     ▼
+                   AI Detective          Policy Engine
+                         │                     │
+                         └──────────┬──────────┘
+                                    ▼
+                            Resolution Decision
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+                Resolve          Retry           Human Review
+
+🤖 AI: Where Intelligence Actually Matters
+
+We deliberately did not make AI responsible for directly changing
+payment state.
+
+Instead, ResolverAI uses AI as an investigative layer.
+
+AI Detective
+
+The AI Detective receives evidence such as:
+
+Payment state history
+
+Razorpay identifiers
+
+Webhook events
+
+Verification results
+
+Timing information
+
+Failure metadata
+
+Previous resolution attempts
+
+Available system evidence
+
+It then forms a hypothesis such as:
+
+USER_DECLINED
+BANK_SERVER_ERROR
+NETWORK_TIMEOUT
+WEBHOOK_DELAY
+DUPLICATE_EVENT
+STATE_MISMATCH
+UNKNOWN
+
+and produces a confidence-backed explanation.
+
+Example:
+
+Payment appears unsuccessful.
+
+Hypothesis:
+BANK_SERVER_ERROR
+
+Confidence:
+0.91
+
+Evidence:
+- Checkout failure reported
+- Razorpay failure metadata present
+- No successful capture evidence
+- No conflicting capture event observed
+
+Recommendation:
+Do not retry automatically.
+Allow bounded retry or escalate according to policy.
+
+The important part is that the AI output is not trusted blindly.
+
+🛡️ Policy Engine
+
+The Policy Engine is the safety boundary between intelligence and
+financial action.
+
+It asks:
+
+Is the evidence sufficient?
+        │
+        ├── YES → Is the action allowed?
+        │              │
+        │              ├── YES → Execute bounded action
+        │              └── NO  → Human review
+        │
+        └── NO → Preserve state / investigate
+
+This prevents an AI model from deciding:
+
+"Looks like the payment probably failed, let's charge the customer
+again."
+
+Instead:
+
+Uncertainty produces caution, not financial autonomy.
+
+🔐 Security Architecture
+
+Financial correctness requires security at every boundary.
+
+1. Razorpay Webhook HMAC Verification
+
+ResolverAI:
+
+Reads the raw request body.
+
+Computes HMAC-SHA256 using the configured webhook secret.
+
+Compares signatures using constant-time comparison.
+
+Rejects invalid signatures with 401 Unauthorized.
+
+Performs no state mutation on invalid signatures.
+
+Razorpay Webhook
+      │
+      ▼
+Raw Request Body
+      │
+      ▼
+HMAC-SHA256
+      │
+      ▼
+compare_digest()
+      │
+   ┌──┴──┐
+   │     │
+ VALID  INVALID
+   │     │
+   ▼     ▼
+Process 401
+
+2. Server-Trusted Order Identity
+
+Checkout verification does not blindly trust the order ID supplied by
+the browser.
+
+ResolverAI first resolves the payment intent from its own database and
+retrieves the server-trusted Razorpay order ID.
+
+Only then is the checkout signature verified.
+
+This prevents the client from becoming the authority for payment
+identity.
+
+3. Invalid Signature State Preservation
+
+An invalid signature must not accidentally mutate payment state.
+
+ResolverAI guarantees:
+
+Invalid signature
+      ↓
+401 Unauthorized
+      ↓
+NO state mutation
+NO outbox task
+NO fake authorization
+
+4. Idempotency
+
+Payment systems naturally produce retries and duplicate deliveries.
+
+ResolverAI handles repeated verification and webhook delivery without
+blindly creating duplicate work.
+
+Example:
+
+First verification
+     ↓
+AUTHORIZED
+     ↓
+Outbox task created
+
+Same verification again
+     ↓
+Already authorized
+     ↓
+200 OK
+idempotent = true
+     ↓
+No duplicate outbox task
+
+🔄 Payment State Machine
+
+ResolverAI uses explicit state transitions instead of arbitrary database
+updates.
+
+A simplified lifecycle:
+
+CREATED
+   │
+   ▼
+PENDING_RAIL
+   │
+   ├──────────────► FAILED
+   │
+   ▼
+AUTHORIZED
+   │
+   ▼
+CAPTURED
+   │
+   ▼
+RECONCILED
+
+Uncertain situations can be routed toward:
+
+UNCERTAIN
+   ↓
+VERIFYING
+   ↓
+RECONCILED
+      OR
+MANUAL_REVIEW
+
+The state machine makes invalid transitions visible and testable.
+
+📦 Three Sources of Truth
+
+ResolverAI was designed around three complementary forms of truth:
+
+1. Payment Truth
+
+What happened at the payment provider / payment rail?
+
+2. State Truth
+
+What does ResolverAI believe the payment state is, according to
+deterministic transition rules?
+
+3. Evidence Truth
+
+What evidence proves why the state became what it is?
+
+This distinction is important because:
+
+A database row saying CAPTURED is not enough. We want to know why
+it is CAPTURED.
+
+🧾 Evidence & Auditability
+
+Every important action should be reconstructable.
+
+ResolverAI maintains evidence around:
+
+Payment intent
+
+Razorpay order ID
+
+Razorpay payment ID
+
+Webhook event
+
+Signature verification
+
+State transition
+
+Resolution task
+
+Audit event
+
+Provenance
+
+The UI explicitly distinguishes sources such as:
+
+REAL RAZORPAY API
+REAL RAZORPAY WEBHOOK
+POLICY ENGINE
+AI DETECTIVE
+INTERNAL REPLAY
+⚠ LOCAL SIMULATION
+
+This prevents demo data and real provider data from being visually
+confused.
+
+🔁 Outbox Pattern
+
+A critical design decision was separating state mutation from
+asynchronous resolution work.
+
+Instead of:
+
+Webhook
+  ↓
+Change DB
+  ↓
+Hope worker receives it
+
+ResolverAI records durable work:
+
+Verified Event
+     ↓
+Database State Change
+     ↓
+Outbox Task
+     ↓
+Worker
+     ↓
+Resolution Engine
+
+This makes asynchronous processing recoverable and auditable.
+
+🌐 Real Razorpay Integration
+
+ResolverAI is not a mocked payment screen.
+
+The project integrates with Razorpay's actual TEST environment.
+
+The demonstrated flow is:
+
+ResolverAI
+   │
+   ├── POST /orders
+   │
+   ▼
+Razorpay Order
+   │
+   ▼
+Razorpay Checkout
+   │
+   ├── SUCCESS
+   │      ↓
+   │   Signature verification
+   │      ↓
+   │   AUTHORIZED
+   │
+   └── FAILURE
+          ↓
+       Failure evidence
+          ↓
+         FAILED
+
+The project also exposes:
+
+POST /webhook/razorpay
+
+for signed Razorpay webhook ingestion.
+
+🧪 Failure Handling
+
+Scenario A --- Successful Payment
+
+Create Order
+     ↓
+Razorpay Checkout
+     ↓
+Successful payment
+     ↓
+Checkout signature verification
+     ↓
+AUTHORIZED
+     ↓
+Webhook / capture evidence
+     ↓
+CAPTURED / RECONCILED
+
+Scenario B --- Customer / Bank Failure
+
+Checkout
+   ↓
+payment.failed
+   ↓
+Resolve Razorpay Order ID
+   ↓
+Match existing Payment Intent
+   ↓
+FAILED
+   ↓
+Audit + Evidence
+   ↓
+Outbox
+   ↓
+Policy Evaluation
+
+Scenario C --- Invalid Webhook
+
+Webhook
+   ↓
+Invalid HMAC
+   ↓
+401 Unauthorized
+   ↓
+No state mutation
+No outbox task
+
+Scenario D --- Duplicate Webhook
+
+Webhook #1 → Process
+Webhook #2 → Detect duplicate
+             ↓
+          Ignore safely
+
+Scenario E --- Browser / Network Disconnect
+
+Customer completes payment
+        ↓
+Browser loses connection
+        ↓
+Merchant UI has incomplete information
+        ↓
+Razorpay webhook remains authoritative evidence
+        ↓
+ResolverAI reconciles the intent
+
+🖥️ Command Center
+
+ResolverAI includes an operator-focused interface rather than only an
+API.
+
+Dashboard
+
+Provides system-level visibility into payment and resolution activity.
+
+Payments Registry
+
+A searchable registry containing:
+
+Payment Intent ID
+
+Payment state
+
+Razorpay order ID
+
+Razorpay payment ID
+
+Amount
+
+Provenance
+
+Last updated timestamp
+
+Payment Detail / Investigation Center
+
+Designed for forensic investigation of an individual payment.
+
+Webhook History
+
+Provides visibility into webhook ingestion and diagnostic information.
+
+Audit Trail
+
+Makes important system actions reconstructable.
+
+Reconciliation Cases
+
+Provides a workspace for ambiguous or exceptional payments.
+
+Integration Health
+
+Shows subsystem readiness and integration status.
+
+Engineering / Chaos Lab
+
+Allows controlled local simulations of failure conditions without
+confusing them with real Razorpay events.
+
+🧑‍💻 Technology Stack
+
+Backend
+
+Python
+
+FastAPI
+
+PostgreSQL
+
+Redis
+
+HMAC-SHA256
+
+Background Worker
+
+Outbox Pattern
+
+Frontend
+
+Next.js 14
+
+React
+
+JavaScript
+
+CSS / custom design system
+
+Recharts
+
+Payment Integration
+
+Razorpay Orders API
+
+Razorpay Checkout
+
+Razorpay Webhooks
+
+Razorpay TEST environment
+
+AI / Resolution
+
+AI Detective
+
+Policy Engine
+
+Deterministic State Machine
+
+Resolution Worker
+
+📊 Verification & Engineering Results
+
+ResolverAI was repeatedly validated during development.
+
+Backend
+
+Python Unit / Contract Tests
+101 / 101 PASSED
+
+Compilation
+
+python3 -m compileall .
+SUCCESS
+0 syntax errors
+
+Frontend
+
+next build
+SUCCESS
+
+12 / 12 routes generated
+
+Security Tests
+
+Validated scenarios include:
+
+✓ Invalid webhook signature rejected
+✓ Invalid checkout signature rejected
+✓ Invalid signature does not mutate payment state
+✓ Duplicate verification is idempotent
+✓ Duplicate webhook delivery is handled safely
+✓ Server-trusted Razorpay order ID resolution
+✓ CORS preflight handling
+
+Live Integration Checks
+
+Validated during the build:
+
+✓ Render deployment reachable
+✓ /health endpoint
+✓ /openapi.json
+✓ Razorpay order creation
+✓ Razorpay Checkout initialization
+✓ Bearer-authenticated order retrieval
+✓ Razorpay webhook endpoint
+✓ HMAC signature validation
+
+🧪 Testing Philosophy
+
+We did not stop at:
+
+"The UI looks good."
+
+The project was tested at multiple layers.
+
+                 ┌─────────────────┐
+                 │     UI Build     │
+                 └────────┬────────┘
+                          │
+                 ┌────────▼────────┐
+                 │ API Contracts    │
+                 └────────┬────────┘
+                          │
+                 ┌────────▼────────┐
+                 │ Unit Tests       │
+                 └────────┬────────┘
+                          │
+                 ┌────────▼────────┐
+                 │ Security Tests   │
+                 └────────┬────────┘
+                          │
+                 ┌────────▼────────┐
+                 │ Live Integration │
+                 └─────────────────┘
+
+The goal was to prove that the system behaves correctly when things go
+wrong, not just when everything works.
+
+🚀 Quick Start
+
+Backend
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+Configure environment variables for the local deployment, including the
+required database, Redis, authentication, and Razorpay TEST
+credentials/secrets.
+
+Start the API according to the project's deployment configuration.
+
+Frontend
+
 cd frontend
 npm install
 npm run dev
-```
 
-Access at: `http://localhost:3000`
-API docs at: `http://localhost:8000/docs`
+Production build:
 
-### One-command start
+npm run build
 
-```bash
-bash start_all.sh
-```
+🔬 Useful Verification Commands
 
----
+Run the complete Python test suite:
 
-## Environment Variables
+python3 -m unittest discover tests
 
-| Variable | Default | Description |
-|---|---|---|
-| `DATABASE_URL` | `postgresql://...` | PostgreSQL connection string |
-| `REDIS_URL` | `redis://localhost:6379` | Redis URL (optional) |
-| `RAZORPAY_KEY_ID` | — | Razorpay Key ID (rzp_test_ or rzp_live_) |
-| `RAZORPAY_KEY_SECRET` | — | Razorpay Key Secret |
-| `RAZORPAY_WEBHOOK_SECRET` | — | Webhook signing secret |
-| `RAZORPAY_MODE` | `SYNTHETIC` | `TEST`, `LIVE`, or `SYNTHETIC` |
-| `AI_MODE` | `DETERMINISTIC` | `DETERMINISTIC` or `ENABLED` |
-| `GEMINI_API_KEY` | — | Google Gemini API key (optional) |
-| `GROQ_API_KEY` | — | Groq API key (optional) |
-| `ENVIRONMENT` | `development` | `development` or `production` |
+Compile the backend:
 
----
+python3 -m compileall .
 
-## API Endpoints
+Build the frontend:
 
-### Core
-- `GET /health` — Backend health + mode
-- `GET /integrations/health` — Real-time Razorpay connectivity check
+cd frontend
+npm run build
 
-### Payments
-- `GET /payments` — List payment intents
-- `GET /payments/{id}` — Payment intent detail
-- `POST /payments/{id}/reconcile` — Trigger resolution
-- `GET /payments/{id}/verify` — Live Razorpay snapshot
+Inspect the API contract:
 
-### Orders
-- `POST /orders` — Create a real Razorpay order
-- `GET /orders/{razorpay_order_id}` — Fetch order with payments
+GET /openapi.json
 
-### Webhooks
-- `POST /webhook/razorpay` — Razorpay webhook receiver (HMAC verified)
-- `GET /webhooks` — Webhook event history
-- `GET /webhooks/{id}` — Webhook event detail
-- `POST /webhooks/{id}/replay` — Internal event replay
+Health check:
 
-### Reconciliation
-- `GET /cases` — Reconciliation cases
-- `POST /cases/{id}/manual-resolve` — Operator resolution
+GET /health
 
-### Dashboard
-- `GET /dashboard/stats` — KPI aggregates
-- `GET /audit` — Audit event log
-- `GET /outbox/dead-letters` — Dead-letter events
+Razorpay webhook:
 
-### Engineering (local only)
-- `POST /engineering/chaos/late-auth` — Inject late authorization test
-- `POST /engineering/chaos/cross-rail` — Inject duplicate execution test
-- `POST /engineering/chaos/out-of-order` — Inject out-of-order webhook test
+POST /webhook/razorpay
 
----
+🎬 Suggested Buildathon Demo
 
-## AI Provider
+A strong demonstration can be completed in a few minutes.
 
-The "AI" in ResolverAI is named honestly:
+1. Show the Architecture
 
-| Config | What It Uses |
-|---|---|
-| Default (no API key) | **Deterministic Rule Engine** — explicit audit-able rules |
-| `GEMINI_API_KEY` + `AI_MODE=ENABLED` | **Gemini AI Advisory** — LLM analysis layer |
-| `GROQ_API_KEY` + `AI_MODE=ENABLED` | **Groq AI Advisory** — LLM analysis layer |
+Explain:
 
-The provider name is shown in the UI next to every recommendation. The AI layer is **advisory only** — it cannot authorize financial actions.
+"ResolverAI is not replacing Razorpay. It is the merchant-side control
+plane that resolves payment ambiguity above the payment rail."
 
----
+2. Create a Real TEST Order
 
-## Honesty Contract
+Use:
 
-> "Never fabricate external state. Never fabricate AI. Never fabricate financial outcomes."
+Create Order & Pay
 
-- No demo buttons in the main product UI
-- No synthetic payments presented as real
-- Engineering chaos tools are clearly labeled LOCAL ENGINEERING TEST ONLY
-- Every webhook shows its source (RAZORPAY vs SYNTHETIC)
-- Signature verification failures are recorded and visible
-- The integration health page shows exactly what is and isn't connected
+Show that the order is created through the backend.
 
----
+3. Complete a Razorpay TEST Payment
 
-## Tests
+Show the Razorpay Checkout experience.
 
-```bash
-python3 -m pytest tests/ -v
-```
+4. Show Verification
 
----
+Demonstrate that the successful payment moves through:
 
-## License
+CREATED
+→ AUTHORIZED
+→ CAPTURED / RECONCILED
 
-MIT
+5. Demonstrate Failure
+
+Create another TEST order and trigger a payment failure.
+
+Show:
+
+payment.failed
+→ matching Razorpay order
+→ FAILED
+→ evidence
+→ audit
+→ resolution workflow
+
+6. Demonstrate Security
+
+Send an invalid signature.
+
+Show:
+
+401 Unauthorized
+
+and explain:
+
+"The important part is not just rejecting the request. The payment
+state remains untouched."
+
+7. Demonstrate Idempotency
+
+Repeat verification.
+
+Show:
+
+{
+  "idempotent": true
+}
+
+Then explain:
+
+"Retries don't become duplicate financial actions."
+
+💡 Why This Is More Than a Payment Dashboard
+
+A normal dashboard answers:
+
+"What is the payment status?"
+
+ResolverAI tries to answer:
+
+"What is the payment status, what evidence proves it, why did it
+reach that state, what should happen next, and is it safe to automate
+that action?"
+
+That is the difference between observability and resolution
+intelligence.
+
+🧠 Engineering Decisions We Are Proud Of
+
+We chose deterministic state over AI guesses.
+
+Because financial state must be predictable.
+
+We made evidence first-class.
+
+Because a payment decision without evidence is difficult to audit.
+
+We designed for duplicate events.
+
+Because distributed systems retry.
+
+We designed for delayed information.
+
+Because asynchronous payment systems cannot assume perfect ordering.
+
+We separated intelligence from authority.
+
+Because AI should investigate financial events, not silently become the
+financial ledger.
+
+We tested failure paths.
+
+Because happy-path demos are easy.
+
+The difficult engineering is proving what happens when the system
+disagrees with itself.
+
+⚠️ Scope & Honest Limitations
+
+ResolverAI is a buildathon / prototype implementation, not a
+production payment processor or a replacement for Razorpay's
+infrastructure.
+
+The project intentionally operates within the Razorpay TEST environment
+for demonstration and validation.
+
+Some advanced production concerns would require additional engineering
+before handling real merchant funds at scale, including:
+
+Production-grade secret and key management
+
+High-availability deployment
+
+Distributed worker coordination at scale
+
+Formal disaster recovery
+
+Comprehensive observability and alerting
+
+Production-grade model governance
+
+Extensive load and chaos testing
+
+Formal security review / penetration testing
+
+Merchant-specific policy configuration
+
+Expanded reconciliation with downstream banking and settlement
+systems
+
+Being explicit about these boundaries is part of the design philosophy:
+
+A trustworthy financial system should clearly distinguish what it
+knows, what it infers, and what it has not yet verified.
+
+🔮 What ResolverAI Could Become
+
+The buildathon prototype can evolve into a broader Payment Resolution
+Infrastructure Layer.
+
+Potential future capabilities:
+
+Multi-provider payment resolution
+        ↓
+Cross-rail reconciliation
+        ↓
+Real-time anomaly detection
+        ↓
+Merchant-specific policy learning
+        ↓
+Adaptive retry optimization
+        ↓
+Settlement intelligence
+        ↓
+Fleet-wide payment incident intelligence
+
+The long-term vision is not simply:
+
+"Use AI to process payments."
+
+It is:
+
+"Use AI to make payment infrastructure explainable, recoverable, and
+safer under uncertainty."
+
+🏁 Final Statement
+
+ResolverAI started with a simple observation:
+
+Payments are easy when everything works. The real engineering
+challenge begins when systems disagree.
+
+We built ResolverAI to attack that exact problem.
+
+We combined:
+
+Real Razorpay TEST integration
+
+Secure webhook verification
+
+Server-trusted payment identity
+
+Deterministic state machines
+
+Idempotent processing
+
+Durable outbox processing
+
+Evidence-driven reconciliation
+
+AI-assisted investigation
+
+Policy-based financial guardrails
+
+Operator-focused observability
+
+Security and failure-path testing
+
+The result is not an AI that blindly makes payment decisions.
+
+It is something we believe is more useful:
+
+An AI-assisted payment resolution system that knows when to investigate, when to automate, and when to stop and ask a human.
+
+ResolverAI --- Resolve the payment. Preserve the truth.
+
+👥 Built for the Razorpay AI Buildathon
+
+Project: ResolverAI
+Category: AI + FinTech + Payment Infrastructure
+Integration: Razorpay TEST APIs, Checkout & Webhooks
+Focus: Payment State Resolution, Reconciliation, Security &
+AI-Assisted Decision Support
+
+📌 Project Structure
+
+Resolver_AI/
+├── api/
+│   ├── orders_routes.py
+│   ├── webhook_receiver.py
+│   └── ...
+├── core/
+│   ├── state_machine.py
+│   ├── resolver.py
+│   └── ...
+├── razorpay/
+│   └── webhooks.py
+├── tests/
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   ├── components/
+│   │   └── lib/
+│   └── package.json
+├── worker.py
+├── app.py
+└── README.md
+
+⭐ The One-Line Pitch
+
+ResolverAI is an AI-assisted payment control plane that reconciles
+uncertain Razorpay payment states using verified evidence,
+deterministic safety rules, idempotent processing, and explainable
+resolution intelligence.
