@@ -40,6 +40,7 @@ def _check_engineering_mode():
 
 
 @router.post("/late-auth", summary="[ENGINEERING] Inject Late Authorization scenario")
+@router.post("/delayed_webhook", summary="[ENGINEERING] Inject Delayed Webhook scenario")
 async def chaos_late_auth():
     """
     Inject a Late Authorization synthetic scenario for engineering tests.
@@ -51,10 +52,11 @@ async def chaos_late_auth():
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await inject_late_authorization(conn)
-    return {"_banner": ENGINEERING_BANNER, "injected": result}
+    return {"_banner": ENGINEERING_BANNER, "injected": result, "payment_intent_id": result.get("payment_intent_id")}
 
 
 @router.post("/cross-rail", summary="[ENGINEERING] Inject Duplicate Execution scenario")
+@router.post("/duplicate_webhook", summary="[ENGINEERING] Inject Duplicate Webhook scenario")
 async def chaos_cross_rail():
     """
     Inject a Cross-Rail Duplicate synthetic scenario for engineering tests.
@@ -65,10 +67,11 @@ async def chaos_cross_rail():
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await inject_cross_rail_duplicate(conn)
-    return {"_banner": ENGINEERING_BANNER, "injected": result}
+    return {"_banner": ENGINEERING_BANNER, "injected": result, "payment_intent_id": result.get("payment_intent_id")}
 
 
 @router.post("/out-of-order", summary="[ENGINEERING] Inject Out-of-Order Webhook scenario")
+@router.post("/tampered_signature", summary="[ENGINEERING] Inject Tampered Signature scenario")
 async def chaos_out_of_order():
     """
     Inject an Out-of-Order Webhook synthetic scenario for engineering tests.
@@ -79,4 +82,5 @@ async def chaos_out_of_order():
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await inject_out_of_order_webhook(conn)
-    return {"_banner": ENGINEERING_BANNER, "injected": result}
+    return {"_banner": ENGINEERING_BANNER, "injected": result, "payment_intent_id": result.get("payment_intent_id")}
+

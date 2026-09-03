@@ -114,23 +114,27 @@ export default function EngineeringChaosLabPage() {
       </div>
 
       {/* Result Panel */}
-      {lastResult && (
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div style={{ fontWeight: 700, color: '#FB923C', fontSize: '0.95rem' }}>
-              Chaos Scenario Execution Result
+      {lastResult && (() => {
+        const intentId = lastResult.payment_intent_id || lastResult.injected?.payment_intent_id;
+        return (
+          <div className="glass-card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ fontWeight: 700, color: '#FB923C', fontSize: '0.95rem' }}>
+                Chaos Scenario Execution Result
+              </div>
+              {intentId && (
+                <Link href={`/payments/${intentId}`} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.78rem' }}>
+                  Inspect Intent <ArrowRight size={13} />
+                </Link>
+              )}
             </div>
-            {lastResult.payment_intent_id && (
-              <Link href={`/payments/${lastResult.payment_intent_id}`} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.78rem' }}>
-                Inspect Intent <ArrowRight size={13} />
-              </Link>
-            )}
+            <pre style={{ margin: 0, padding: '16px', background: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.78rem', color: '#60A5FA', overflowX: 'auto' }}>
+              {JSON.stringify(lastResult, null, 2)}
+            </pre>
           </div>
-          <pre style={{ margin: 0, padding: '16px', background: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.78rem', color: '#60A5FA', overflowX: 'auto' }}>
-            {JSON.stringify(lastResult, null, 2)}
-          </pre>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
+
