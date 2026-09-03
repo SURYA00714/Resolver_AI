@@ -15,7 +15,12 @@ from db.connection import get_pool
 from domain.errors import WebhookSignatureError
 from razorpay.webhooks import verify_webhook_signature
 
+import config
+
 router = APIRouter()
+
+# Global counter for rejected webhook attempts (e.g. 401 invalid signature)
+REJECTED_WEBHOOK_COUNT = 0
 
 
 @router.post("/webhook/razorpay")
@@ -33,14 +38,22 @@ async def handle_razorpay_webhook(
     5. Upsert payment_intent state
     6. Enqueue durable outbox resolution task
     """
+    global REJECTED_WEBHOOK_COUNT
     raw_body = await request.body()
     correlation_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+
+    # Stage 1: RECEIVED
+    print(f"[WEBHOOK] RECEIVED correlation_id={correlation_id} event_id={x_razorpay_event_id or 'none'}", file=sys.stderr)
 
     # Step 1: Signature Verification
     signature_valid = verify_webhook_signature(raw_body, x_razorpay_signature or "")
     if not signature_valid:
-        print(f"[WEBHOOK] Invalid Razorpay webhook signature! correlation_id={correlation_id}", file=sys.stderr)
+        REJECTED_WEBHOOK_COUNT += 1
+        print(f"[WEBHOOK] REJECTED correlation_id={correlation_id} reason=invalid_signature", file=sys.stderr)
         raise HTTPException(status_code=401, detail="Invalid signature")
+
+    # Stage 2: SIGNATURE_VERIFIED
+    print(f"[WEBHOOK] SIGNATURE_VERIFIED correlation_id={correlation_id}", file=sys.stderr)
 
     # Step 2: Parse JSON Payload
     try:
@@ -97,6 +110,12 @@ async def handle_razorpay_webhook(
     else:
         payment_intent_id = uuid.uuid5(uuid.NAMESPACE_DNS, str(order_id))
 
+    # Stage 3: EVENT_NORMALIZED
+    print(
+        f"[WEBHOOK] EVENT_NORMALIZED correlation_id={correlation_id} raw_event={raw_event_type} event_type={event_type} intent_id={payment_intent_id}",
+        file=sys.stderr,
+    )
+
     # Parse Amount (Razorpay delivers amount in paise)
     from domain.money import minor_units_to_decimal, validate_currency
     amount_raw = payment_entity.get("amount") or order_entity.get("amount") or refund_entity.get("amount") or 0
@@ -133,6 +152,9 @@ async def handle_razorpay_webhook(
         except asyncpg.UniqueViolationError:
             await mark_event_processed(source, external_event_id, payload_hash=payload_hash)
             return {"status": "ignored", "reason": "duplicate event (db)"}
+
+        # Stage 4: DB_PERSISTED
+        print(f"[WEBHOOK] DB_PERSISTED correlation_id={correlation_id} external_event_id={external_event_id}", file=sys.stderr)
 
         # Step 5: Upsert Payment Intent
         await conn.execute(
@@ -176,6 +198,9 @@ async def handle_razorpay_webhook(
             }),
         )
 
+        # Stage 5: OUTBOX_ENQUEUED
+        print(f"[WEBHOOK] OUTBOX_ENQUEUED correlation_id={correlation_id} outbox_key={outbox_idempotency_key}", file=sys.stderr)
+
     # Mark as processed in Redis
     await mark_event_processed(source, external_event_id, payload_hash=payload_hash)
 
@@ -209,32 +234,48 @@ async def handle_legacy_webhook(request: Request):
 async def get_webhook_diagnostics():
     """
     Production webhook receiver diagnostics & real-time health.
-    Reports endpoint status, total events received, signature verification rates,
-    and database persistence status. Never exposes secret keys.
+    Reports route status, secret config state, event counts, last event info.
+    NEVER exposes secrets or sensitive data.
     """
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        total_events = await conn.fetchval("SELECT COUNT(*) FROM payment_events")
-        verified_events = await conn.fetchval("SELECT COUNT(*) FROM payment_events WHERE signature_verified = TRUE")
-        unsupported_events = await conn.fetchval("SELECT COUNT(*) FROM payment_events WHERE event_type LIKE 'UNSUPPORTED_%'")
-        last_event = await conn.fetchrow("SELECT event_id, event_type, source, received_at, signature_verified FROM payment_events ORDER BY received_at DESC LIMIT 1")
+    webhook_secret_configured = bool(config.RAZORPAY_WEBHOOK_SECRET)
+    route_registered = True
+
+    total_events = REJECTED_WEBHOOK_COUNT
+    verified_events = 0
+    rejected_events = REJECTED_WEBHOOK_COUNT
+    last_event_at = None
+    last_event_type = None
+
+    try:
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            total_db = await conn.fetchval("SELECT COUNT(*) FROM payment_events")
+            verified_db = await conn.fetchval("SELECT COUNT(*) FROM payment_events WHERE signature_verified = TRUE")
+            unverified_db = await conn.fetchval("SELECT COUNT(*) FROM payment_events WHERE signature_verified = FALSE")
+
+            verified_events = verified_db or 0
+            rejected_events = REJECTED_WEBHOOK_COUNT + (unverified_db or 0)
+            total_events = (total_db or 0) + REJECTED_WEBHOOK_COUNT
+
+            last_event = await conn.fetchrow(
+                "SELECT event_type, received_at FROM payment_events ORDER BY received_at DESC LIMIT 1"
+            )
+            if last_event:
+                last_event_type = last_event["event_type"]
+                if last_event["received_at"]:
+                    last_event_at = str(last_event["received_at"])
+    except Exception as e:
+        print(f"[WEBHOOK_DIAGNOSTICS] DB query failed, returning fallback metrics: {e}", file=sys.stderr)
 
     return {
-        "webhook_endpoint_configured": True,
+        "route_registered": route_registered,
+        "webhook_secret_configured": webhook_secret_configured,
+        "events_received": total_events,
+        "verified_events": verified_events,
+        "rejected_events": rejected_events,
+        "last_event_at": last_event_at,
+        "last_event_type": last_event_type,
         "public_webhook_url": "https://resolver-ai-l3ks.onrender.com/webhook/razorpay",
         "environment": config.ENVIRONMENT,
         "razorpay_mode": config.RAZORPAY_MODE,
-        "stats": {
-            "total_events_received": total_events or 0,
-            "total_verified_events": verified_events or 0,
-            "total_unsupported_events": unsupported_events or 0,
-        },
-        "database_persistence": "HEALTHY",
-        "last_event": {
-            "event_id": str(last_event["event_id"]) if last_event else None,
-            "event_type": last_event["event_type"] if last_event else None,
-            "source": last_event["source"] if last_event else None,
-            "received_at": str(last_event["received_at"]) if last_event else None,
-            "signature_verified": last_event["signature_verified"] if last_event else False,
-        } if last_event else None,
     }

@@ -27,7 +27,7 @@ def verify_webhook_signature(
         # In non-production mode if secret is empty, log warning
         if config.ENVIRONMENT == "production":
             raise WebhookSignatureError("RAZORPAY_WEBHOOK_SECRET not configured in production")
-        return True
+        return False
 
     if not signature:
         return False
