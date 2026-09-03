@@ -68,6 +68,7 @@ export const api = {
   setToken,
   getToken,
   clearToken,
+
   // ── Auth ──────────────────────────────────────────
   login: (username, password, role) => fetchApi('/auth/login', {
     method: 'POST',
@@ -76,26 +77,31 @@ export const api = {
   getAuthMe: () => fetchApi('/auth/me'),
   getRoles: () => fetchApi('/auth/roles'),
 
-  // ── Core dashboard ────────────────────────────────
+  // ── Core dashboard & Diagnostics ──────────────────
   getStats: () => fetchApi('/dashboard/stats'),
   getHealth: () => fetchApi('/health'),
   getIntegrationHealth: () => fetchApi('/integrations/health'),
+  getWebhookDiagnostics: () => fetchApi('/webhook/diagnostics'),
 
-  // ── Payments ──────────────────────────────────────
+  // ── Payments & Resolution ─────────────────────────
   getPayments: (params = {}) => {
     const q = new URLSearchParams(params).toString();
     return fetchApi(`/payments${q ? `?${q}` : ''}`);
   },
   getPayment: (id) => fetchApi(`/payments/${id}`),
   getPaymentTimeline: (id) => fetchApi(`/payments/${id}/timeline`),
+  getPaymentEvidence: (id) => fetchApi(`/payments/evidence/${id}`),
+  getPaymentInvestigation: (id) => fetchApi(`/payments/${id}/investigation`),
   reconcilePayment: (id) => fetchApi(`/payments/${id}/reconcile`, { method: 'POST' }),
+  resolvePayment: (id) => fetchApi(`/payments/${id}/resolve`, { method: 'POST' }),
   verifyWithRazorpay: (id) => fetchApi(`/payments/${id}/verify`),
 
-  // ── Orders (real Razorpay) ────────────────────────
+  // ── Orders (real Razorpay Checkout) ───────────────
   createOrder: (body) => fetchApi('/orders', { method: 'POST', body: JSON.stringify(body) }),
   getOrder: (razorpayOrderId) => fetchApi(`/orders/${razorpayOrderId}`),
+  verifyPayment: (body) => fetchApi('/orders/verify_payment', { method: 'POST', body: JSON.stringify(body) }),
 
-  // ── Webhooks ──────────────────────────────────────
+  // ── Webhooks & Dead Letters ───────────────────────
   getWebhooks: (params = {}) => {
     const q = new URLSearchParams(params).toString();
     return fetchApi(`/webhooks${q ? `?${q}` : ''}`);
@@ -104,11 +110,15 @@ export const api = {
   replayWebhook: (id) => fetchApi(`/webhooks/${id}/replay`, { method: 'POST' }),
   getDeadLetters: () => fetchApi('/outbox/dead-letters'),
 
-  // ── Reconciliation cases ──────────────────────────
+  // ── Reconciliation cases & Forensic Replay ────────
   getCases: (status) => fetchApi(`/cases${status ? `?status=${status}` : ''}`),
   getCase: (id) => fetchApi(`/cases/${id}`),
   resolveCase: (id, body) => fetchApi(`/cases/${id}/manual-resolve`, { method: 'POST', body: JSON.stringify(body) }),
+  forensicReplayCase: (paymentIntentId) => fetchApi(`/cases/replay/${paymentIntentId}`, { method: 'POST' }),
 
   // ── Audit ─────────────────────────────────────────
   getAuditTrail: (limit = 50) => fetchApi(`/audit?limit=${limit}`),
+
+  // ── Chaos / Engineering ───────────────────────────
+  injectChaos: (type) => fetchApi(`/engineering/chaos/${type}`, { method: 'POST' }),
 };

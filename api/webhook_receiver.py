@@ -229,8 +229,7 @@ async def handle_legacy_webhook(request: Request):
     )
 
 
-@router.get("/webhook/diagnostics", summary="Production webhook diagnostics & stats")
-@router.get("/webhooks/diagnostics", summary="Production webhook diagnostics & stats (alias)")
+@router.get("/webhook/diagnostics", summary="Production webhook diagnostics & stats", operation_id="get_webhook_diagnostics")
 async def get_webhook_diagnostics():
     """
     Production webhook receiver diagnostics & real-time health.
@@ -279,3 +278,8 @@ async def get_webhook_diagnostics():
         "environment": config.ENVIRONMENT,
         "razorpay_mode": config.RAZORPAY_MODE,
     }
+
+
+@router.get("/webhooks/diagnostics", summary="Production webhook diagnostics & stats (alias)", operation_id="get_webhooks_diagnostics_alias")
+async def get_webhooks_diagnostics_alias():
+    return await get_webhook_diagnostics()

@@ -208,7 +208,7 @@ async def verify_checkout_payment(req: VerifyCheckoutRequest, user: dict = Depen
     pool = await get_pool()
     async with pool.acquire() as conn:
         intent = await conn.fetchrow(
-            """SELECT payment_intent_id, merchant_id FROM payment_intents WHERE razorpay_order_id = """,
+            """SELECT payment_intent_id, merchant_id FROM payment_intents WHERE razorpay_order_id = $1""",
             req.razorpay_order_id
         )
         if not intent:
@@ -219,15 +219,15 @@ async def verify_checkout_payment(req: VerifyCheckoutRequest, user: dict = Depen
         pid = intent["payment_intent_id"]
         await conn.execute(
             """UPDATE payment_intents
-               SET active_payment_id = , current_state = 'AUTHORIZED', updated_at = NOW()
-               WHERE payment_intent_id = """,
+               SET active_payment_id = $1, current_state = 'AUTHORIZED', updated_at = NOW()
+               WHERE payment_intent_id = $2""",
             req.razorpay_payment_id, pid
         )
 
         outbox_key = f"outbox_checkout_{req.razorpay_payment_id}"
         await conn.execute(
             """INSERT INTO outbox_events (event_type, aggregate_id, merchant_id, idempotency_key, payload, status)
-               VALUES ('RESOLVE_INTENT', , , , , 'PENDING')
+               VALUES ('RESOLVE_INTENT', $1, $2, $3, $4, 'PENDING')
                ON CONFLICT (idempotency_key) DO NOTHING""",
             str(pid),
             intent["merchant_id"],
@@ -244,7 +244,7 @@ async def verify_checkout_payment(req: VerifyCheckoutRequest, user: dict = Depen
 
         await conn.execute(
             """INSERT INTO audit_events (event_type, actor_id, resource_type, resource_id, payload)
-               VALUES ('CHECKOUT_VERIFIED', 'CUSTOMER', 'PAYMENT_INTENT', , )""",
+               VALUES ('CHECKOUT_VERIFIED', 'CUSTOMER', 'PAYMENT_INTENT', $1, $2)""",
             str(pid),
             json.dumps({"razorpay_order_id": req.razorpay_order_id, "razorpay_payment_id": req.razorpay_payment_id})
         )

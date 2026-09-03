@@ -11,24 +11,29 @@ import {
   ShieldCheck,
   Webhook,
   PlusCircle,
-  Settings,
   Plug,
   ChevronDown,
   ChevronRight,
   LogOut,
   User,
   FlaskConical,
+  Sun,
+  Moon,
+  Activity,
+  CheckCircle2,
+  Lock,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useTheme } from '@/components/ThemeProvider';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard, permission: 'read:dashboard' },
-  { href: '/payments', label: 'Payments', icon: CreditCard, permission: 'read:payments' },
-  { href: '/payments/new', label: 'Create Order', icon: PlusCircle, permission: 'write:create_order' },
+  { href: '/payments', label: 'Payments Registry', icon: CreditCard, permission: 'read:payments' },
+  { href: '/payments/new', label: 'Create Order & Pay', icon: PlusCircle, permission: 'write:create_order' },
   { href: '/cases', label: 'Recon Cases', icon: AlertTriangle, permission: 'read:cases' },
   { href: '/webhooks', label: 'Webhook History', icon: Webhook, permission: 'read:webhooks' },
   { href: '/audit', label: 'Audit Trail', icon: FileText, permission: 'read:audit' },
-  { href: '/settings/integration', label: 'Integration', icon: Plug, permission: 'read:integration' },
+  { href: '/settings/integration', label: 'Integration Health', icon: Plug, permission: 'read:integration' },
 ];
 
 const engineeringItems = [
@@ -37,6 +42,7 @@ const engineeringItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
   const [health, setHealth] = useState(null);
   const [user, setUser] = useState(null);
   const [showEngineering, setShowEngineering] = useState(false);
@@ -51,10 +57,9 @@ export default function Sidebar() {
     return () => clearInterval(interval);
   }, []);
 
-  const razorpayMode = health?.razorpay_mode;
-  const isSynthetic = razorpayMode === 'SYNTHETIC' || !razorpayMode;
-  const statusColor = health?.status === 'ok' ? '#2AB673' : '#F87171';
-  const statusLabel = health?.status === 'ok' ? 'Backend Connected' : 'Backend Unreachable';
+  const razorpayMode = health?.razorpay_mode || 'TEST';
+  const statusColor = health?.status === 'ok' ? 'var(--accent-primary)' : '#EF4444';
+  const statusLabel = health?.status === 'ok' ? 'Engine Connected' : 'Engine Offline';
 
   const handleLogout = () => {
     api.clearToken();
@@ -63,13 +68,13 @@ export default function Sidebar() {
 
   const visibleNav = user?.authenticated
     ? navItems.filter(item => (user.permissions || []).includes(item.permission))
-    : [];
+    : navItems; // show default list preview if unauthenticated for rendering fallback
 
   return (
     <aside style={{
       width: '260px',
-      background: '#0A0F1A',
-      borderRight: '1px solid #1E2535',
+      background: 'var(--bg-surface)',
+      borderRight: '1px solid var(--border-color)',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
@@ -80,39 +85,70 @@ export default function Sidebar() {
       zIndex: 100,
       gap: '0',
     }}>
-      <div style={{ flex: 1 }}>
-        {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 8px 24px 8px' }}>
-          <div style={{
-            width: '38px', height: '38px', borderRadius: '10px',
-            background: 'linear-gradient(135deg, #2AB673 0%, #15693F 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 18px rgba(42, 182, 115, 0.3)', flexShrink: 0,
-          }}>
-            <ShieldCheck size={20} color="#FFF" />
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {/* Brand Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px 20px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '38px', height: '38px', borderRadius: '10px',
+              background: 'linear-gradient(135deg, var(--accent-primary) 0%, #15693F 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 14px var(--accent-glow)', flexShrink: 0,
+            }}>
+              <ShieldCheck size={20} color="#FFF" />
+            </div>
+            <div>
+              <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
+                Resolver<span style={{ color: 'var(--accent-primary)' }}>AI</span>
+              </h1>
+              <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                Fintech Integrity
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#FFF', letterSpacing: '-0.02em', margin: 0 }}>
-              Resolver<span style={{ color: '#2AB673' }}>AI</span>
-            </h1>
-            <p style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 500, margin: 0 }}>
-              Payment Integrity Platform
-            </p>
-          </div>
+
+          {/* Theme Toggle Switcher */}
+          <button
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
+            style={{
+              background: 'var(--bg-surface-hover)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+              borderRadius: '8px',
+              padding: '6px 8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {theme === 'dark' ? <Sun size={15} color="#FBBF24" /> : <Moon size={15} color="#6366F1" />}
+          </button>
         </div>
 
-        {/* Razorpay Mode Banner */}
-        {isSynthetic && (
-          <div style={{
-            margin: '0 0 16px 0', padding: '8px 12px',
-            background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.25)',
-            borderRadius: '8px', fontSize: '0.72rem', color: '#FBBF24', fontWeight: 500,
+        {/* Live Environment Badge */}
+        <div style={{
+          margin: '0 0 16px 0', padding: '6px 12px',
+          background: 'var(--bg-surface-hover)', border: '1px solid var(--border-color)',
+          borderRadius: '8px', fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="pulse-active" />
+            RAZORPAY MODE
+          </span>
+          <span style={{
+            fontSize: '0.68rem', padding: '2px 6px', borderRadius: '4px',
+            background: razorpayMode === 'LIVE' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+            color: razorpayMode === 'LIVE' ? '#22C55E' : '#60A5FA', fontWeight: 700,
           }}>
-            ⚠ TEST MODE — No real Razorpay API
-          </div>
-        )}
+            {razorpayMode}
+          </span>
+        </div>
 
-        {/* Navigation */}
+        {/* Navigation Items */}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {visibleNav.map((item) => {
             const Icon = item.icon;
@@ -124,82 +160,81 @@ export default function Sidebar() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: '11px',
                   padding: '9px 13px', borderRadius: '8px', fontSize: '0.855rem',
-                  fontWeight: isActive ? 600 : 400, color: isActive ? '#2AB673' : '#94A3B8',
-                  background: isActive ? 'rgba(42, 182, 115, 0.1)' : 'transparent',
-                  borderLeft: isActive ? '3px solid #2AB673' : '3px solid transparent',
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                  background: isActive ? 'var(--accent-glow)' : 'transparent',
+                  borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
                   textDecoration: 'none', transition: 'all 0.15s ease',
                 }}
               >
-                <Icon size={17} color={isActive ? '#2AB673' : '#475569'} />
+                <Icon size={17} color={isActive ? 'var(--accent-primary)' : 'var(--text-muted)'} />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Engineering section (collapsed by default) */}
-        {user?.authenticated && (
-          <div style={{ marginTop: '16px' }}>
-            <button
-              onClick={() => setShowEngineering(v => !v)}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '7px 13px', background: 'none', border: 'none', cursor: 'pointer',
-                color: '#475569', fontSize: '0.75rem', fontWeight: 600,
-                letterSpacing: '0.06em', textTransform: 'uppercase',
-              }}
-            >
-              <span>Engineering</span>
-              {showEngineering ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            </button>
-            {showEngineering && engineeringItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname.startsWith(item.href);
-              return (
-                <Link key={item.href} href={item.href} style={{
-                  display: 'flex', alignItems: 'center', gap: '11px',
-                  padding: '8px 13px 8px 20px', borderRadius: '8px', fontSize: '0.83rem',
-                  fontWeight: isActive ? 600 : 400, color: isActive ? '#FB923C' : '#64748B',
-                  background: isActive ? 'rgba(251, 146, 60, 0.08)' : 'transparent',
-                  textDecoration: 'none',
-                }}>
-                  <Icon size={16} color={isActive ? '#FB923C' : '#475569'} />
-                  <span>{item.label}</span>
-                  <span style={{ fontSize: '0.65rem', background: '#1E2535', color: '#64748B', padding: '2px 5px', borderRadius: '4px', marginLeft: 'auto' }}>
-                    LOCAL
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        {/* Engineering Section */}
+        <div style={{ marginTop: '18px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+          <button
+            onClick={() => setShowEngineering(v => !v)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '7px 13px', background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700,
+              letterSpacing: '0.06em', textTransform: 'uppercase',
+            }}
+          >
+            <span>Engineering Lab</span>
+            {showEngineering ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </button>
+          {showEngineering && engineeringItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname.startsWith(item.href);
+            return (
+              <Link key={item.href} href={item.href} style={{
+                display: 'flex', alignItems: 'center', gap: '11px',
+                padding: '8px 13px 8px 20px', borderRadius: '8px', fontSize: '0.83rem',
+                fontWeight: isActive ? 700 : 500, color: isActive ? '#FB923C' : 'var(--text-muted)',
+                background: isActive ? 'rgba(251, 146, 60, 0.1)' : 'transparent',
+                textDecoration: 'none',
+              }}>
+                <Icon size={16} color={isActive ? '#FB923C' : 'var(--text-muted)'} />
+                <span>{item.label}</span>
+                <span style={{ fontSize: '0.62rem', background: 'var(--badge-sim-bg)', color: 'var(--badge-sim-text)', padding: '2px 5px', borderRadius: '4px', marginLeft: 'auto', fontWeight: 700 }}>
+                  SIM
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* System Status Footer */}
       <div style={{
-        padding: '12px 14px', background: '#0E1826', border: '1px solid #1E2535',
-        borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '12px 14px', background: 'var(--bg-surface-hover)', border: '1px solid var(--border-color)',
+        borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px',
       }}>
         <div style={{
           width: '8px', height: '8px', borderRadius: '50%', background: statusColor,
           boxShadow: `0 0 8px ${statusColor}`, flexShrink: 0,
         }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#E2E8F0' }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>
             {statusLabel}
           </div>
-          <div style={{ fontSize: '0.68rem', color: '#475569' }}>
-            {health ? `Razorpay: ${razorpayMode || 'NOT_SET'}` : 'Checking...'}
+          <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+            {user?.user?.username ? `Role: ${user.user.role}` : 'Operator Interface'}
           </div>
         </div>
         {user?.authenticated ? (
           <button onClick={handleLogout} title="Sign out" style={{
-            background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: '4px',
+            background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px',
           }}>
             <LogOut size={16} />
           </button>
         ) : (
-          <Link href="/login" title="Sign in" style={{ color: '#64748B', display: 'inline-flex' }}>
+          <Link href="/login" title="Sign in" style={{ color: 'var(--text-muted)', display: 'inline-flex' }}>
             <User size={16} />
           </Link>
         )}
