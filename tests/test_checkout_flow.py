@@ -97,8 +97,18 @@ class TestRazorpayCheckoutFrontendFlow(unittest.TestCase):
         self.assertEqual(data.get("status"), "VERIFIED")
         self.assertEqual(data.get("razorpay_payment_id"), payment_id)
 
-    def test_checkout_failed_payment_signature_rejection(self):
+    @patch("api.orders_routes.get_pool")
+    def test_checkout_failed_payment_signature_rejection(self, mock_get_pool):
         """Verify failed payment attempt / tampered signature is rejected."""
+        mock_pool, mock_conn = _create_mock_pool()
+        mock_get_pool.return_value = mock_pool
+        mock_conn.fetchrow.return_value = {
+            "payment_intent_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "merchant_id": "default_merchant",
+            "razorpay_order_id": "order_test_fail_111",
+            "current_state": "CREATED",
+        }
+
         handler_response_failed = {
             "razorpay_order_id": "order_test_fail_111",
             "razorpay_payment_id": "pay_test_fail_222",

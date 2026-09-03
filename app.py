@@ -29,21 +29,21 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# CORS — strict allowlist in all environments
+# CORS configuration supporting localhost, Vercel deployments, and configured origins
 _allowed_origins = [o.strip() for o in config.ALLOWED_ORIGINS if o.strip()]
 if not _allowed_origins:
     _allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
-# Ensure Vercel is always allowed, regardless of Render env variables
 if "https://resolver-ai-beryl.vercel.app" not in _allowed_origins:
     _allowed_origins.append("https://resolver-ai-beryl.vercel.app")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app|http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Razorpay-Signature", "X-Razorpay-Event-Id", "X-Request-ID"],
+    allow_headers=["*"],
     expose_headers=["X-Request-ID", "X-RateLimit-Remaining"],
 )
 

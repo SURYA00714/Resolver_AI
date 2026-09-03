@@ -54,8 +54,18 @@ class TestOrdersVerifyEndpoint(unittest.TestCase):
         self.assertFalse(verify_payment_signature(order_id, payment_id, "invalid_signature_hex"))
         self.assertFalse(verify_payment_signature(order_id, payment_id, valid_sig, secret="wrong_secret"))
 
-    def test_verify_checkout_invalid_signature_returns_401(self):
+    @patch("api.orders_routes.get_pool")
+    def test_verify_checkout_invalid_signature_returns_401(self, mock_get_pool):
         """POST /orders/verify_payment with bad signature returns 401."""
+        mock_pool, mock_conn = _create_mock_pool()
+        mock_get_pool.return_value = mock_pool
+        mock_conn.fetchrow.return_value = {
+            "payment_intent_id": "11111111-2222-3333-4444-555555555555",
+            "merchant_id": "default_merchant",
+            "razorpay_order_id": "order_test_123",
+            "current_state": "CREATED",
+        }
+
         body = {
             "razorpay_order_id": "order_test_123",
             "razorpay_payment_id": "pay_test_456",
