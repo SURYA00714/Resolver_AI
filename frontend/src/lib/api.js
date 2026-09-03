@@ -37,24 +37,28 @@ async function fetchApi(endpoint, options = {}) {
 
   try {
     const res = await fetch(url, { ...options, headers });
-    if (res.status === 401) {
-      clearToken();
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
-      }
-    }
     if (!res.ok) {
       const errData = await res.json().catch(() => ({ detail: res.statusText }));
       let detail = 'API Error';
+      let errCode = null;
       if (errData && errData.detail) {
         if (typeof errData.detail === 'object') {
           detail = errData.detail.message || JSON.stringify(errData.detail);
+          errCode = errData.detail.error;
         } else {
           detail = errData.detail;
         }
       } else if (errData && errData.message) {
         detail = errData.message;
       }
+
+      if (res.status === 401 && errCode !== 'invalid_checkout_signature' && !endpoint.includes('/auth/login')) {
+        clearToken();
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login';
+        }
+      }
+
       throw new Error(detail || `API error ${res.status}`);
     }
     return await res.json();
