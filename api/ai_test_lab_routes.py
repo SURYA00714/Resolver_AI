@@ -37,6 +37,45 @@ ENGINEERING_BANNER = {
 }
 
 
+async def _ensure_ai_test_tables(conn: asyncpg.Connection):
+    """Idempotently ensure AI test tables exist."""
+    try:
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS ai_test_runs (
+                run_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                run_type VARCHAR(50) NOT NULL DEFAULT 'BASELINE',
+                status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+                scenarios_total INT DEFAULT 0,
+                scenarios_passed INT DEFAULT 0,
+                scenarios_failed INT DEFAULT 0,
+                scenarios_warning INT DEFAULT 0,
+                risk_level VARCHAR(50) DEFAULT 'INFORMATIONAL',
+                started_at TIMESTAMPTZ DEFAULT NOW(),
+                completed_at TIMESTAMPTZ,
+                created_by VARCHAR(255) DEFAULT 'OPERATOR',
+                provenance VARCHAR(255) DEFAULT 'LOCAL_AI_SIMULATION'
+            );
+
+            CREATE TABLE IF NOT EXISTS ai_test_results (
+                result_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                run_id UUID REFERENCES ai_test_runs(run_id) ON DELETE CASCADE,
+                scenario_id VARCHAR(255) NOT NULL,
+                scenario_type VARCHAR(255) NOT NULL,
+                category VARCHAR(100) DEFAULT 'SECURITY',
+                risk_level VARCHAR(50) DEFAULT 'INFORMATIONAL',
+                status VARCHAR(50) DEFAULT 'PENDING',
+                expected_result JSONB,
+                actual_result JSONB,
+                trace JSONB,
+                ai_analysis JSONB,
+                provenance VARCHAR(255) DEFAULT 'LOCAL_AI_SIMULATION',
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
+        """)
+    except Exception:
+        pass
+
+
 def _check_test_lab_environment():
     """Refuse execution if environment is production."""
     try:
@@ -60,21 +99,28 @@ async def get_test_lab_status(user: dict = Depends(require_permission("read:dash
     is_locked = (str(config.ENVIRONMENT).lower() == "production")
     provider = get_provider()
 
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        latest_run = await conn.fetchrow(
-            """SELECT run_id, run_type, status, scenarios_total, scenarios_passed,
-                      scenarios_failed, scenarios_warning, risk_level, started_at, completed_at
-               FROM ai_test_runs ORDER BY started_at DESC LIMIT 1"""
-        )
-        totals = await conn.fetchrow(
-            """SELECT COUNT(*) as total_runs,
-                      COALESCE(SUM(scenarios_total), 0) as total_scenarios,
-                      COALESCE(SUM(scenarios_passed), 0) as total_passed,
-                      COALESCE(SUM(scenarios_failed), 0) as total_failed,
-                      COALESCE(SUM(scenarios_warning), 0) as total_warning
-               FROM ai_test_runs"""
-        )
+    latest_run = None
+    totals = None
+
+    try:
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            await _ensure_ai_test_tables(conn)
+            latest_run = await conn.fetchrow(
+                """SELECT run_id, run_type, status, scenarios_total, scenarios_passed,
+                          scenarios_failed, scenarios_warning, risk_level, started_at, completed_at
+                   FROM ai_test_runs ORDER BY started_at DESC LIMIT 1"""
+            )
+            totals = await conn.fetchrow(
+                """SELECT COUNT(*) as total_runs,
+                          COALESCE(SUM(scenarios_total), 0) as total_scenarios,
+                          COALESCE(SUM(scenarios_passed), 0) as total_passed,
+                          COALESCE(SUM(scenarios_failed), 0) as total_failed,
+                          COALESCE(SUM(scenarios_warning), 0) as total_warning
+                   FROM ai_test_runs"""
+            )
+    except Exception:
+        pass
 
     latest_data = None
     if latest_run:
@@ -109,6 +155,7 @@ async def get_test_lab_status(user: dict = Depends(require_permission("read:dash
         },
         "latest_run": latest_data,
     }
+
 
 
 @router.get("/scenarios", summary="Get Scenario Library")
@@ -196,34 +243,40 @@ async def get_test_runs(
     user: dict = Depends(require_permission("read:dashboard")),
 ):
     """List historical test runs."""
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            """SELECT run_id, run_type, status, scenarios_total, scenarios_passed,
-                      scenarios_failed, scenarios_warning, risk_level, started_at, completed_at, created_by, provenance
-               FROM ai_test_runs ORDER BY started_at DESC LIMIT $1""",
-            limit
-        )
+    runs = []
+    try:
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            await _ensure_ai_test_tables(conn)
+            rows = await conn.fetch(
+                """SELECT run_id, run_type, status, scenarios_total, scenarios_passed,
+                          scenarios_failed, scenarios_warning, risk_level, started_at, completed_at, created_by, provenance
+                   FROM ai_test_runs ORDER BY started_at DESC LIMIT $1""",
+                limit
+            )
 
-    runs = [
-        {
-            "run_id": str(r["run_id"]),
-            "run_type": r["run_type"],
-            "status": r["status"],
-            "scenarios_total": r["scenarios_total"],
-            "scenarios_passed": r["scenarios_passed"],
-            "scenarios_failed": r["scenarios_failed"],
-            "scenarios_warning": r["scenarios_warning"],
-            "risk_level": r["risk_level"],
-            "started_at": r["started_at"].isoformat() if r["started_at"] else None,
-            "completed_at": r["completed_at"].isoformat() if r["completed_at"] else None,
-            "created_by": r["created_by"],
-            "provenance": r["provenance"],
-        }
-        for r in rows
-    ]
+        runs = [
+            {
+                "run_id": str(r["run_id"]),
+                "run_type": r["run_type"],
+                "status": r["status"],
+                "scenarios_total": r["scenarios_total"],
+                "scenarios_passed": r["scenarios_passed"],
+                "scenarios_failed": r["scenarios_failed"],
+                "scenarios_warning": r["scenarios_warning"],
+                "risk_level": r["risk_level"],
+                "started_at": r["started_at"].isoformat() if r["started_at"] else None,
+                "completed_at": r["completed_at"].isoformat() if r["completed_at"] else None,
+                "created_by": r["created_by"],
+                "provenance": r["provenance"],
+            }
+            for r in rows
+        ]
+    except Exception:
+        pass
 
     return {"runs": runs}
+
 
 
 @router.get("/runs/{run_id}", summary="Get Test Run Details")
