@@ -16,6 +16,7 @@ from api.payment_routes import router as payment_router
 from api.razorpay_verify_routes import router as verify_router
 from api.reconciliation_routes import router as case_router
 from api.webhook_receiver import router as webhook_router
+from api.ai_test_lab_routes import router as ai_test_lab_router
 from core.idempotency import close_redis
 from core.rate_limiter import is_rate_limited
 from db.connection import check_db, close_db, get_pool, init_db
@@ -89,7 +90,9 @@ app.include_router(orders_router)
 app.include_router(case_router)
 app.include_router(dashboard_router)
 app.include_router(verify_router)
-# Engineering routes registered but protected by environment gate in the router itself
+app.include_router(engineering_router)
+app.include_router(ai_test_lab_router)
+
 
 
 @app.on_event("startup")

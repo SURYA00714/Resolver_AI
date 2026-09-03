@@ -250,3 +250,42 @@ DROP TRIGGER IF EXISTS trg_update_updated_at_cases ON reconciliation_cases;
 CREATE TRIGGER trg_update_updated_at_cases
     BEFORE UPDATE ON reconciliation_cases
     EXECUTE FUNCTION update_updated_at();
+
+-- ============================================================
+-- AI Test Lab — Autonomous Adversarial Test Runs & Results
+-- ============================================================
+CREATE TABLE IF NOT EXISTS ai_test_runs (
+    run_id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    run_type           VARCHAR(50)  NOT NULL DEFAULT 'BASELINE',
+    status             VARCHAR(50)  NOT NULL DEFAULT 'PENDING',
+    scenarios_total    INT          DEFAULT 0,
+    scenarios_passed   INT          DEFAULT 0,
+    scenarios_failed   INT          DEFAULT 0,
+    scenarios_warning  INT          DEFAULT 0,
+    risk_level         VARCHAR(20)  DEFAULT 'LOW',
+    started_at         TIMESTAMPTZ  DEFAULT NOW(),
+    completed_at       TIMESTAMPTZ,
+    created_by         VARCHAR(255) DEFAULT 'SYSTEM',
+    provenance         VARCHAR(50)  DEFAULT 'AI_TEST_LAB',
+    metadata           JSONB
+);
+
+CREATE TABLE IF NOT EXISTS ai_test_results (
+    result_id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    run_id             UUID NOT NULL REFERENCES ai_test_runs(run_id) ON DELETE CASCADE,
+    scenario_id        VARCHAR(100) NOT NULL,
+    scenario_type      VARCHAR(100) NOT NULL,
+    category           VARCHAR(50)  NOT NULL DEFAULT 'BASELINE',
+    risk_level         VARCHAR(20)  NOT NULL DEFAULT 'LOW',
+    status             VARCHAR(20)  NOT NULL DEFAULT 'PASS',
+    expected_result    JSONB        NOT NULL,
+    actual_result      JSONB        NOT NULL,
+    trace              JSONB        NOT NULL,
+    ai_analysis        JSONB,
+    provenance         VARCHAR(50)  DEFAULT 'LOCAL_AI_SIMULATION',
+    created_at         TIMESTAMPTZ  DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_test_runs_started ON ai_test_runs(started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_test_results_run ON ai_test_results(run_id);
+

@@ -126,4 +126,16 @@ export const api = {
 
   // ── Chaos / Engineering ───────────────────────────
   injectChaos: (type) => fetchApi(`/engineering/chaos/${type}`, { method: 'POST' }),
+
+  // ── AI Test Lab ───────────────────────────────────
+  getTestLabStatus: () => fetchApi('/ai-test-lab/status'),
+  getTestLabScenarios: () => fetchApi('/ai-test-lab/scenarios'),
+  runTestLabSuite: (body = {}) => fetchApi('/ai-test-lab/run', { method: 'POST', body: JSON.stringify(body) }),
+  stopTestLabRun: (runId) => fetchApi(`/ai-test-lab/run/${runId}/stop`, { method: 'POST' }),
+  getTestLabRuns: (limit = 20) => fetchApi(`/ai-test-lab/runs?limit=${limit}`),
+  getTestLabRun: (runId) => fetchApi(`/ai-test-lab/runs/${runId}`),
+  getTestLabResult: (resultId) => fetchApi(`/ai-test-lab/results/${resultId}`),
+  generateAiScenarios: (body = {}) => fetchApi('/ai-test-lab/generate', { method: 'POST', body: JSON.stringify(body) }),
+  runAiAdversarialSuite: (body = {}) => fetchApi('/ai-test-lab/adversarial-run', { method: 'POST', body: JSON.stringify(body) }),
 };
+

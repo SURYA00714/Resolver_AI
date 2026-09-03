@@ -37,6 +37,7 @@ const navItems = [
 ];
 
 const engineeringItems = [
+  { href: '/engineering/ai-test-lab', label: 'AI Test Lab', icon: ShieldCheck },
   { href: '/engineering/testing', label: 'Chaos Lab', icon: FlaskConical },
 ];
 
