@@ -39,48 +39,45 @@ def _check_engineering_mode():
         )
 
 
-@router.post("/late-auth", summary="[ENGINEERING] Inject Late Authorization scenario")
-@router.post("/delayed_webhook", summary="[ENGINEERING] Inject Delayed Webhook scenario")
+@router.post("/late-auth")
+@router.post("/delayed_webhook")
+@router.post("/DELAYED_WEBHOOK")
 async def chaos_late_auth():
-    """
-    Inject a Late Authorization synthetic scenario for engineering tests.
-
-    WARNING: This creates SYNTHETIC payment intents — not real Razorpay payments.
-    Use only in LOCAL ENGINEERING TEST environments to verify the resolution pipeline.
-    """
+    """Inject a Late Authorization / Delayed Webhook synthetic scenario."""
     _check_engineering_mode()
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await inject_late_authorization(conn)
-    return {"_banner": ENGINEERING_BANNER, "injected": result, "payment_intent_id": result.get("payment_intent_id")}
+    return {"_banner": ENGINEERING_BANNER, "status": "SUCCESS", "injected": result, "payment_intent_id": result.get("payment_intent_id")}
 
 
-@router.post("/cross-rail", summary="[ENGINEERING] Inject Duplicate Execution scenario")
-@router.post("/duplicate_webhook", summary="[ENGINEERING] Inject Duplicate Webhook scenario")
+@router.post("/cross-rail")
+@router.post("/duplicate_webhook")
+@router.post("/DUPLICATE_WEBHOOK")
 async def chaos_cross_rail():
-    """
-    Inject a Cross-Rail Duplicate synthetic scenario for engineering tests.
-
-    WARNING: This creates SYNTHETIC payment intents — not real Razorpay payments.
-    """
+    """Inject a Cross-Rail / Duplicate Webhook synthetic scenario."""
     _check_engineering_mode()
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await inject_cross_rail_duplicate(conn)
-    return {"_banner": ENGINEERING_BANNER, "injected": result, "payment_intent_id": result.get("payment_intent_id")}
+    return {"_banner": ENGINEERING_BANNER, "status": "SUCCESS", "injected": result, "payment_intent_id": result.get("payment_intent_id")}
 
 
-@router.post("/out-of-order", summary="[ENGINEERING] Inject Out-of-Order Webhook scenario")
-@router.post("/tampered_signature", summary="[ENGINEERING] Inject Tampered Signature scenario")
+@router.post("/out-of-order")
+@router.post("/out_of_order")
+@router.post("/OUT_OF_ORDER")
+@router.post("/tampered_signature")
+@router.post("/TAMPERED_SIGNATURE")
+@router.post("/bank_error")
+@router.post("/BANK_ERROR")
+@router.post("/conflicting_state")
+@router.post("/CONFLICTING_STATE")
 async def chaos_out_of_order():
-    """
-    Inject an Out-of-Order Webhook synthetic scenario for engineering tests.
-
-    WARNING: This creates SYNTHETIC payment intents — not real Razorpay payments.
-    """
+    """Inject Out-of-Order / Tampered Signature / Bank Error / Conflicting State synthetic scenario."""
     _check_engineering_mode()
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await inject_out_of_order_webhook(conn)
-    return {"_banner": ENGINEERING_BANNER, "injected": result, "payment_intent_id": result.get("payment_intent_id")}
+    return {"_banner": ENGINEERING_BANNER, "status": "SUCCESS", "injected": result, "payment_intent_id": result.get("payment_intent_id")}
+
 

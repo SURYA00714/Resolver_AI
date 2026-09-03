@@ -1,6 +1,7 @@
 'use client';
 
-import { RefreshCw, PlusCircle, ShieldCheck, Activity, Eye, Zap } from 'lucide-react';
+import { RefreshCw, PlusCircle, ShieldCheck, Activity, Eye, Zap, RotateCcw } from 'lucide-react';
+
 import Link from 'next/link';
 
 export default function BuildathonHeader({ loading, loadData, isJudgeView, setIsJudgeView }) {
@@ -43,12 +44,33 @@ export default function BuildathonHeader({ loading, loadData, isJudgeView, setIs
             Refresh
           </button>
 
+          <button
+            onClick={async () => {
+              if (confirm('Reset Synthetic Demo Data?\n\nThis will clear synthetic test runs while keeping all real Razorpay TEST data 100% intact.')) {
+                try {
+                  const { api } = await import('@/lib/api');
+                  await api.resetDemoEnvironment();
+                  alert('Synthetic demo data reset cleanly! Real Razorpay TEST data remains intact.');
+                  loadData();
+                } catch (err) {
+                  alert(`Reset Notice: ${err.message}`);
+                }
+              }
+            }}
+            className="btn btn-secondary"
+            style={{ fontSize: '0.8rem', gap: '6px', color: '#F59E0B', borderColor: 'rgba(245, 158, 11, 0.3)' }}
+          >
+            <RotateCcw size={14} />
+            Reset Synthetic Demo
+          </button>
+
           <Link href="/payments/new" className="btn btn-primary" style={{ fontSize: '0.8rem', gap: '6px' }}>
             <PlusCircle size={14} />
             Simulate Checkout
           </Link>
         </div>
       </div>
+
 
       {/* Lifecycle Banner: PAYMENT -> EVENTS -> STATE -> EVIDENCE -> AI -> POLICY -> RESOLUTION -> AUDIT */}
       <div className="glass-card" style={{ padding: '14px 20px', background: 'var(--bg-surface-hover)' }}>

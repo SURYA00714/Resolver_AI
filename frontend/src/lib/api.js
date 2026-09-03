@@ -137,5 +137,7 @@ export const api = {
   getTestLabResult: (resultId) => fetchApi(`/ai-test-lab/results/${resultId}`),
   generateAiScenarios: (body = {}) => fetchApi('/ai-test-lab/generate', { method: 'POST', body: JSON.stringify(body) }),
   runAiAdversarialSuite: (body = {}) => fetchApi('/ai-test-lab/adversarial-run', { method: 'POST', body: JSON.stringify(body) }),
+  resetDemoEnvironment: () => fetchApi('/dashboard/reset-demo', { method: 'POST' }),
 };
+
 
