@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "skipLibCheck": true,
+    "typeRoots": [],
     "paths": {
       "@/*": ["./src/*"]
     }
