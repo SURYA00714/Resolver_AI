@@ -104,6 +104,7 @@ export const api = {
   createOrder: (body) => fetchApi('/orders', { method: 'POST', body: JSON.stringify(body) }),
   getOrder: (razorpayOrderId) => fetchApi(`/orders/${razorpayOrderId}`),
   verifyPayment: (body) => fetchApi('/orders/verify_payment', { method: 'POST', body: JSON.stringify(body) }),
+  reportFailure: (body) => fetchApi('/orders/report_failure', { method: 'POST', body: JSON.stringify(body) }),
 
   // ── Webhooks & Dead Letters ───────────────────────
   getWebhooks: (params = {}) => {

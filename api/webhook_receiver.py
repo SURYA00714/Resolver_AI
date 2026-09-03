@@ -100,7 +100,7 @@ async def handle_razorpay_webhook(
     merchant_ref = notes.get("merchant_reference") or notes.get("merchant_order_id")
     order_id = razorpay_order_id or merchant_ref or f"ORD_{uuid.uuid4().hex[:8]}"
 
-    # Derive deterministic Payment Intent UUID from order_id or notes
+    # Derive Payment Intent UUID from notes or order_id fallback
     raw_intent_id = notes.get("payment_intent_id")
     if raw_intent_id:
         try:
@@ -141,6 +141,15 @@ async def handle_razorpay_webhook(
 
     pool = await get_pool()
     async with pool.acquire() as conn:
+        # Resolve existing Payment Intent UUID from DB by razorpay_order_id or order_id
+        target_order_ref = razorpay_order_id or order_id
+        if target_order_ref and not raw_intent_id:
+            existing_row = await conn.fetchrow(
+                "SELECT payment_intent_id FROM payment_intents WHERE razorpay_order_id = $1 OR order_id = $1",
+                target_order_ref
+            )
+            if existing_row and existing_row["payment_intent_id"]:
+                payment_intent_id = existing_row["payment_intent_id"]
         # Step 4: Persist Immutable Payment Event
         try:
             await conn.execute(
@@ -157,16 +166,18 @@ async def handle_razorpay_webhook(
         print(f"[WEBHOOK] DB_PERSISTED correlation_id={correlation_id} external_event_id={external_event_id}", file=sys.stderr)
 
         # Step 5: Upsert Payment Intent
+        target_state = "FAILED" if event_type == "payment.failed" else "PENDING_RAIL"
         await conn.execute(
             """INSERT INTO payment_intents
                (payment_intent_id, merchant_id, merchant_reference, order_id, razorpay_order_id, active_payment_id, amount, currency, current_state, active_rail)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'PENDING_RAIL', 'RAZORPAY')
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'RAZORPAY')
                ON CONFLICT (payment_intent_id) DO UPDATE SET
                  razorpay_order_id = COALESCE(EXCLUDED.razorpay_order_id, payment_intents.razorpay_order_id),
                  active_payment_id = COALESCE(EXCLUDED.active_payment_id, payment_intents.active_payment_id),
                  amount = CASE WHEN EXCLUDED.amount > 0 THEN EXCLUDED.amount ELSE payment_intents.amount END,
+                 current_state = CASE WHEN $9 = 'FAILED' THEN 'FAILED' ELSE payment_intents.current_state END,
                  updated_at = NOW()""",
-            payment_intent_id, merchant_id, merchant_ref, order_id, razorpay_order_id, razorpay_payment_id, amount, currency,
+            payment_intent_id, merchant_id, merchant_ref, order_id, razorpay_order_id, razorpay_payment_id, amount, currency, target_state
         )
 
         if not is_supported_flow:

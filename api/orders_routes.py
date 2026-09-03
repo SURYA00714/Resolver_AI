@@ -301,3 +301,102 @@ async def verify_checkout_payment(req: VerifyCheckoutRequest, user: dict = Depen
         "razorpay_payment_id": req.razorpay_payment_id,
         "idempotent": False,
     }
+
+
+class ReportFailureRequest(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: Optional[str] = None
+    reason: Optional[str] = None
+    payment_intent_id: Optional[str] = None
+
+
+@router.post("/report_failure", summary="Report failed payment attempt from Razorpay Checkout JS modal")
+async def report_checkout_failure(req: ReportFailureRequest, user: dict = Depends(require_permission("write:create_order"))):
+    """
+    Record an explicit checkout failure event reported by Razorpay Checkout JS SDK modal.
+    1. Query trusted local DB state for the payment intent by razorpay_order_id / payment_intent_id.
+    2. Link active_payment_id if present.
+    3. Update current_state to FAILED.
+    4. Record immutable audit log.
+    5. Enqueue outbox resolution task so AI Detective & Policy Engine process the failure.
+    """
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        intent = None
+        if req.payment_intent_id:
+            try:
+                pid_uuid = uuid.UUID(req.payment_intent_id)
+                intent = await conn.fetchrow(
+                    """SELECT payment_intent_id, merchant_id, razorpay_order_id, active_payment_id, current_state
+                       FROM payment_intents WHERE payment_intent_id = $1""",
+                    pid_uuid
+                )
+            except ValueError:
+                pass
+
+        if not intent and req.razorpay_order_id:
+            intent = await conn.fetchrow(
+                """SELECT payment_intent_id, merchant_id, razorpay_order_id, active_payment_id, current_state
+                   FROM payment_intents WHERE razorpay_order_id = $1""",
+                req.razorpay_order_id
+            )
+
+        if not intent:
+            raise HTTPException(
+                status_code=404,
+                detail={"error": "intent_not_found", "message": "Payment intent associated with order_id not found"}
+            )
+
+        verify_merchant_access(user, intent["merchant_id"])
+        pid = intent["payment_intent_id"]
+        server_order_id = intent.get("razorpay_order_id") or req.razorpay_order_id
+
+        # Update intent state to FAILED
+        await conn.execute(
+            """UPDATE payment_intents
+               SET active_payment_id = COALESCE($1, active_payment_id),
+                   current_state = 'FAILED',
+                   updated_at = NOW()
+               WHERE payment_intent_id = $2""",
+            req.razorpay_payment_id, pid
+        )
+
+        # Enqueue outbox task for AI Detective + Policy Engine processing
+        outbox_key = f"outbox_failure_{req.razorpay_payment_id or uuid.uuid4().hex[:8]}"
+        await conn.execute(
+            """INSERT INTO outbox_events (event_type, aggregate_id, merchant_id, idempotency_key, payload, status)
+               VALUES ('RESOLVE_INTENT', $1, $2, $3, $4, 'PENDING')
+               ON CONFLICT (idempotency_key) DO NOTHING""",
+            str(pid),
+            intent["merchant_id"],
+            outbox_key,
+            json.dumps({
+                "payment_intent_id": str(pid),
+                "merchant_id": intent["merchant_id"],
+                "razorpay_payment_id": req.razorpay_payment_id,
+                "razorpay_order_id": server_order_id,
+                "event_type": "payment.failed",
+                "reason": req.reason or "Checkout payment attempt declined",
+                "source": "CHECKOUT_FAILURE_CALLBACK",
+            })
+        )
+
+        # Record audit log
+        await conn.execute(
+            """INSERT INTO audit_events (event_type, actor_id, resource_type, resource_id, payload)
+               VALUES ('CHECKOUT_FAILED', 'CUSTOMER', 'PAYMENT_INTENT', $1, $2)""",
+            str(pid),
+            json.dumps({
+                "razorpay_order_id": server_order_id,
+                "razorpay_payment_id": req.razorpay_payment_id,
+                "reason": req.reason,
+            })
+        )
+
+    return {
+        "status": "RECORDED_FAILURE",
+        "payment_intent_id": str(pid),
+        "razorpay_order_id": server_order_id,
+        "razorpay_payment_id": req.razorpay_payment_id,
+        "current_state": "FAILED",
+    }

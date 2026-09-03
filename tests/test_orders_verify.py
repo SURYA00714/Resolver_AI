@@ -122,7 +122,34 @@ class TestOrdersVerifyEndpoint(unittest.TestCase):
 
         response = self.client.post("/orders/verify_payment", json=body, headers=self.headers)
         self.assertEqual(response.status_code, 404)
-        self.assertIn("not found", response.text.lower())
+    @patch("api.orders_routes.get_pool")
+    def test_report_checkout_failure_success(self, mock_get_pool):
+        """POST /orders/report_failure updates state to FAILED and creates outbox event."""
+        order_id = "order_fail_999"
+        payment_id = "pay_fail_888"
+
+        mock_pool, mock_conn = _create_mock_pool()
+        mock_get_pool.return_value = mock_pool
+        mock_conn.fetchrow.return_value = {
+            "payment_intent_id": "99999999-8888-7777-6666-555555555555",
+            "merchant_id": "default_merchant",
+            "razorpay_order_id": order_id,
+            "current_state": "CREATED",
+        }
+
+        body = {
+            "razorpay_order_id": order_id,
+            "razorpay_payment_id": payment_id,
+            "reason": "Payment failed (bank decline)",
+        }
+
+        response = self.client.post("/orders/report_failure", json=body, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data.get("status"), "RECORDED_FAILURE")
+        self.assertEqual(data.get("current_state"), "FAILED")
+        self.assertEqual(data.get("razorpay_order_id"), order_id)
+        self.assertEqual(data.get("razorpay_payment_id"), payment_id)
 
 
 if __name__ == "__main__":

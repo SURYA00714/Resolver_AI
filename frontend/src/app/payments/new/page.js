@@ -143,9 +143,30 @@ export default function CreateOrderPage() {
 
     try {
       const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (resp) {
+      rzp.on('payment.failed', async function (resp) {
         const failureReason = resp.error?.description || 'Razorpay payment attempt failed.';
-        setErrorDetails({ title: 'Payment Failed', message: failureReason, raw: JSON.stringify(resp.error || {}) });
+        const failedPaymentId = resp.error?.metadata?.payment_id;
+        const failedOrderId = resp.error?.metadata?.order_id || orderRes.razorpay_order_id;
+
+        try {
+          await api.reportFailure({
+            razorpay_order_id: failedOrderId,
+            razorpay_payment_id: failedPaymentId,
+            reason: failureReason,
+            payment_intent_id: orderRes.payment_intent_id,
+          });
+        } catch (err) {
+          console.error('[ResolverAI] Failed to report checkout failure to backend:', err);
+        }
+
+        setErrorDetails({
+          title: 'Payment Failed (Bank Decline / User Action)',
+          message: failureReason,
+          raw: JSON.stringify(resp.error || {}),
+          order_id: failedOrderId,
+          payment_id: failedPaymentId,
+          intent_id: orderRes.payment_intent_id,
+        });
         setUiState('PAYMENT_FAILED');
       });
       rzp.open();
