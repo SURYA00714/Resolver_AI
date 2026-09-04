@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"tertiary-container":"#007d57","primary-fixed-dim":"#b4c5ff","on-secondary-fixed":"#0f0069","surface-dim":"#d2d9f4","inverse-primary":"#b4c5ff","on-tertiary-fixed-variant":"#005137","background":"#faf8ff","on-error-container":"#93000a","on-background":"#131b2e","on-primary":"#ffffff","inverse-on-surface":"#eef0ff","outline-variant":"#c3c6d7","error-container":"#ffdad6","primary":"#004ac6","surface-container-high":"#e2e7ff","primary-fixed":"#dbe1ff","on-surface":"#131b2e","secondary-fixed":"#e2dfff","surface-container-low":"#f2f3ff","secondary-container":"#645efb","tertiary-fixed-dim":"#68dba9","on-primary-fixed":"#00174b","surface-variant":"#dae2fd","primary-container":"#2563eb","on-primary-fixed-variant":"#003ea8","surface-tint":"#0053db","surface":"#faf8ff","surface-container":"#eaedff","on-primary-container":"#eeefff","tertiary":"#006243","on-tertiary-fixed":"#002114","on-secondary":"#ffffff","secondary-fixed-dim":"#c3c0ff","surface-container-highest":"#dae2fd","secondary":"#4b41e1","surface-container-lowest":"#ffffff","on-secondary-fixed-variant":"#3323cc","surface-bright":"#faf8ff","error":"#ba1a1a","tertiary-fixed":"#85f8c4","outline":"#737686","on-error":"#ffffff","inverse-surface":"#283044","on-tertiary-container":"#bdffdc","on-tertiary":"#ffffff","on-secondary-container":"#fffbff","on-surface-variant":"#434655"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"space-xl":"1.5rem","gutter-mobile":"1rem","telemetry-panel-width":"24rem","space-sm":"0.5rem","space-lg":"1.25rem","space-3xl":"3rem","space-2xl":"2rem","space-base":"1rem","space-md":"0.75rem","sidebar-width":"16rem","space-xs":"0.25rem","gutter-desktop":"1.5rem","space-2xs":"0.125rem"},fontFamily:{"body-md":["Inter"],"label-code-sm":["JetBrains Mono"],"body-lg":["Inter"],"headline-sm":["Inter"],"body-sm":["Inter"],"headline-md":["Inter"],"label-code-md":["JetBrains Mono"],"label-code-lg":["JetBrains Mono"],"label-caps":["Inter"],"headline-lg":["Inter"],"headline-xl":["Inter"],"headline-xl-mobile":["Inter"]},fontSize:{"body-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"400"}],"label-code-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.01em","fontWeight":"500"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"400"}],"headline-sm":["16px",{"lineHeight":"24px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0.005em","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-code-md":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"500"}],"label-code-lg":["14px",{"lineHeight":"20px","letterSpacing":"-0.01em","fontWeight":"500"}],"label-caps":["11px",{"lineHeight":"16px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-xl":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-xl-mobile":["26px",{"lineHeight":"34px","letterSpacing":"-0.015em","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-sidebar-width bg-surface-container-lowest border-r border-outline-variant/40 z-50 flex flex-col justify-between select-none"><div class="flex flex-col h-full overflow-hidden"><div class="h-14 px-space-base flex items-center gap-space-sm border-b border-outline-variant/30 flex-shrink-0"><img alt="Brand logo. - Primary color: #2563eb
+- Font: jetbrainsMono
+- Mode: dark
+- Roundness: rounded-sm
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UmuvfYYd4X_opr_K7suJsLoTcqTp6vRRWK1rVTL6HvC_MvofNOvhB2BMAnRNcUYmyG8HgW8AJNgW_20bTauzA9vvWd-Ot-qDFz44lZwrONl0YR3AD2W2kfRlV-wo8WPWSNICdCXy5OWjWN6FQ9UlZbxwTW9iKfZ1aQm4pHHmzH0t6MRaiCFZr5MjIj-LMkR0wDKKBm1RdQo17wXGMTFQRDuMJzf3Bw7OrV1QZl9tEnjGseLK3Vv0RgEQrN"/><div class="flex flex-col min-w-0 leading-tight"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate">ResolverAI</span><span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider truncate">Intelligence &amp; Resilience</span></div></div><div class="flex-1 overflow-y-auto px-space-sm py-space-md"><nav class="flex flex-col gap-space-md" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><div class="flex flex-col gap-space-2xs"><span class="px-space-sm py-space-2xs font-label-caps text-label-caps uppercase text-outline tracking-wider">Overview</span><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-space-xs transition-colors bg-primary-container text-on-primary font-medium rounded-lg" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[18px]">space_dashboard</span><span class="font-body-sm text-body-sm">Dashboard</span></a></div><div class="flex flex-col gap-space-2xs"><span class="px-space-sm py-space-2xs font-label-caps text-label-caps uppercase text-outline tracking-wider">Payment Operations</span><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="payments" href="#"><span class="material-symbols-outlined text-[18px]">payments</span><span class="font-body-sm text-body-sm">Payments</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="payment-details" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span class="font-body-sm text-body-sm">Payment Details</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="state-resolution" href="#"><span class="material-symbols-outlined text-[18px]">published_with_changes</span><span class="font-body-sm text-body-sm">State Resolution</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="reconciliation" href="#"><span class="material-symbols-outlined text-[18px]">sync_alt</span><span class="font-body-sm text-body-sm">Reconciliation</span></a></div><div class="flex flex-col gap-space-2xs"><span class="px-space-sm py-space-2xs font-label-caps text-label-caps uppercase text-outline tracking-wider">AI Operations</span><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="ai-test-lab" href="#"><span class="material-symbols-outlined text-[18px]">science</span><span class="font-body-sm text-body-sm">AI Test Lab</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="ai-agents" href="#"><span class="material-symbols-outlined text-[18px]">smart_toy</span><span class="font-body-sm text-body-sm">AI Agents</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="ai-decisions" href="#"><span class="material-symbols-outlined text-[18px]">neurology</span><span class="font-body-sm text-body-sm">AI Decisions</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="explainability" href="#"><span class="material-symbols-outlined text-[18px]">visibility</span><span class="font-body-sm text-body-sm">Explainability</span></a></div><div class="flex flex-col gap-space-2xs"><span class="px-space-sm py-space-2xs font-label-caps text-label-caps uppercase text-outline tracking-wider">Resilience</span><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="chaos-lab" href="#"><span class="material-symbols-outlined text-[18px]">warning</span><span class="font-body-sm text-body-sm">Chaos Lab</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="incidents" href="#"><span class="material-symbols-outlined text-[18px]">crisis_alert</span><span class="font-body-sm text-body-sm">Incidents</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="system-health" href="#"><span class="material-symbols-outlined text-[18px]">vital_signs</span><span class="font-body-sm text-body-sm">System Health</span></a></div><div class="flex flex-col gap-space-2xs"><span class="px-space-sm py-space-2xs font-label-caps text-label-caps uppercase text-outline tracking-wider">Engineering</span><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="event-stream" href="#"><span class="material-symbols-outlined text-[18px]">stream</span><span class="font-body-sm text-body-sm">Event Stream</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="audit-logs" href="#"><span class="material-symbols-outlined text-[18px]">security</span><span class="font-body-sm text-body-sm">Audit Logs</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="api-and-webhooks" href="#"><span class="material-symbols-outlined text-[18px]">webhook</span><span class="font-body-sm text-body-sm">API &amp; Webhooks</span></a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="system-configuration" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-sm text-body-sm">System Configuration</span></a></div></nav></div><div class="p-space-base border-t border-outline-variant/30 flex flex-col gap-space-sm bg-surface-container-lowest flex-shrink-0"><div class="flex items-center justify-between p-space-xs bg-surface-container-low rounded-lg border border-outline-variant/30"><div class="flex items-center gap-space-xs"><span class="h-2 w-2 rounded-full bg-tertiary"></span><span class="font-label-code-sm text-label-code-sm text-tertiary font-semibold tracking-wider">SANDBOX</span></div><span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Operational</span></div><div class="p-space-xs bg-surface-container-low rounded-lg border border-outline-variant/30 text-center"><div class="font-label-code-sm text-label-code-sm text-primary font-bold tracking-tight">₹0.00 REAL MONEY AT RISK</div><div class="font-label-code-sm text-label-code-sm text-outline">(Synthetic Mode Active)</div></div><div class="flex items-center gap-space-sm pt-space-2xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="flex flex-col min-w-0"><span class="font-body-sm text-body-sm font-semibold text-on-surface truncate">Alex Mercer</span><span class="font-label-code-sm text-label-code-sm text-on-surface-variant truncate">SecOps / FinOps Lead</span></div></div></div></div></aside><div class="pl-sidebar-width min-h-screen flex flex-col"><header class="fixed top-0 left-sidebar-width right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant/40 z-40 px-space-base flex items-center justify-between gap-space-base"><div class="flex items-center gap-space-sm min-w-0"><img alt="Brand logo. - Primary color: #2563eb
+- Font: jetbrainsMono
+- Mode: dark
+- Roundness: rounded-sm
+" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UmuvfYYd4X_opr_K7suJsLoTcqTp6vRRWK1rVTL6HvC_MvofNOvhB2BMAnRNcUYmyG8HgW8AJNgW_20bTauzA9vvWd-Ot-qDFz44lZwrONl0YR3AD2W2kfRlV-wo8WPWSNICdCXy5OWjWN6FQ9UlZbxwTW9iKfZ1aQm4pHHmzH0t6MRaiCFZr5MjIj-LMkR0wDKKBm1RdQo17wXGMTFQRDuMJzf3Bw7OrV1QZl9tEnjGseLK3Vv0RgEQrN"/><div class="flex items-center gap-space-xs font-label-code-sm text-label-code-sm text-on-surface-variant"><span class="text-outline">ResolverAI</span><span class="text-outline">/</span><span class="text-on-surface font-semibold">Console</span></div></div><div class="flex items-center gap-space-base"><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-space-2xs rounded-lg bg-surface-container-low border border-outline-variant/40"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span></span><span class="font-label-code-sm text-label-code-sm font-semibold text-tertiary">SANDBOX</span><span class="text-outline-variant">|</span><span class="font-label-code-sm text-label-code-sm text-on-surface-variant">₹0.00 MUTATIONS</span></div><div class="hidden lg:flex items-center gap-space-xs px-space-sm py-space-2xs rounded-lg bg-surface-container-low border border-outline-variant/30 text-on-surface-variant font-label-code-sm text-label-code-sm"><span class="material-symbols-outlined text-[14px] text-tertiary">link</span><span>Razorpay (Connected)</span></div><div class="relative hidden sm:block w-72"><span class="material-symbols-outlined absolute left-space-sm top-1/2 -translate-y-1/2 text-[16px] text-outline">search</span><input class="w-full pl-8 pr-12 py-1 bg-surface-container-low rounded-lg border border-outline-variant/50 font-label-code-sm text-label-code-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary" placeholder="Search Payment ID, RRN, Trace ID..." type="text"/><span class="absolute right-space-xs top-1/2 -translate-y-1/2 px-1 rounded bg-surface-container-high text-outline font-label-code-sm text-[10px]">⌘K</span></div><div class="flex items-center gap-space-sm"><a class="font-label-code-sm text-label-code-sm text-on-surface-variant hover:text-primary transition-colors hidden md:inline-flex items-center gap-space-2xs" href="#"><span class="material-symbols-outlined text-[16px]">description</span><span>Docs</span></a><button class="relative p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute 0.5 top-0.5 right-0.5 h-4 w-4 rounded-full bg-primary font-label-code-sm text-[10px] text-on-primary flex items-center justify-center font-bold">3</span></button><div class="flex items-center gap-space-xs pl-space-xs border-l border-outline-variant/40"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><span class="material-symbols-outlined text-outline text-[18px] cursor-pointer hover:text-on-surface">expand_more</span></div></div></div></header><main class="w-full flex-1 pt-14 px-space-base py-space-base bg-background"><div class="flex flex-col w-full">
+<!-- Interactive Toast Notification Placeholder -->
+<div class="fixed bottom-space-lg right-space-lg z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-space-sm bg-inverse-surface text-inverse-on-surface px-space-base py-space-md rounded-xl shadow-xl" id="toast-banner">
+<span class="material-symbols-outlined text-tertiary-fixed text-[20px]">verified</span>
+<span class="font-body-sm text-body-sm font-medium" id="toast-message">Telemetry stream synchronised</span>
+</div>
+<!-- Dashboard Top Command Bar -->
+<header class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-space-md mb-space-xl">
+<div class="flex flex-col gap-space-2xs min-w-0">
+<div class="flex items-center gap-space-sm">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Payment Intelligence Dashboard</h1>
+<span class="inline-flex items-center gap-space-2xs px-space-sm py-space-2xs rounded-lg bg-surface-container-high text-primary font-label-code-sm text-label-code-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+          LIVE STREAM
+        </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-2xl">
+        Monitor real-time settlement telemetry, autonomous AI decision gates, ledger parity, and zero-risk sandboxed state transitions.
+      </p>
+</div>
+<!-- Controls Panel -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<!-- Time Range Selector -->
+<div class="flex items-center bg-surface-container-low p-1 rounded-lg">
+<button class="time-range-btn px-space-sm py-1 rounded-lg font-label-code-sm text-label-code-sm bg-surface-container-lowest text-primary shadow-sm font-semibold transition-all" onclick="setTimeRange(this, '1h')">Last 1 Hour</button>
+<button class="time-range-btn px-space-sm py-1 rounded-lg font-label-code-sm text-label-code-sm text-on-surface-variant hover:text-on-surface transition-all" onclick="setTimeRange(this, '24h')">24 Hours</button>
+<button class="time-range-btn px-space-sm py-1 rounded-lg font-label-code-sm text-label-code-sm text-on-surface-variant hover:text-on-surface transition-all" onclick="setTimeRange(this, '7d')">7 Days</button>
+</div>
+<!-- Quick Actions -->
+<button class="h-9 px-space-md inline-flex items-center gap-space-xs bg-surface-container-lowest hover:bg-surface-container text-on-surface rounded-lg shadow-sm font-body-sm text-body-sm transition-colors" onclick="refreshDashboard(this)">
+<span class="material-symbols-outlined text-[18px]" id="refresh-icon">refresh</span>
+<span>Sync Ledger</span>
+</button>
+<button class="h-9 px-space-md inline-flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary rounded-lg shadow-sm font-body-sm text-body-sm font-medium transition-all hover:shadow-md" onclick="triggerHealthAudit(this)">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span>Run Health Audit</span>
+</button>
+</div>
+</header>
+<!-- High-Integrity KPI Row (6 Core Columns) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-space-md mb-space-xl">
+<!-- 1. Total Payment Events -->
+<div class="bg-surface-container-lowest p-space-base rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-space-sm">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-outline">Payment Events</span>
+<span class="material-symbols-outlined text-primary text-[20px]">account_balance_wallet</span>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight" id="kpi-events">12,842</span>
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center font-label-code-sm text-label-code-sm text-tertiary font-semibold bg-tertiary-fixed/30 px-1.5 py-0.5 rounded">
+            +4.2%
+          </span>
+<span class="font-body-sm text-body-sm text-outline text-[11px]">vs prev window</span>
+</div>
+</div>
+</div>
+<!-- 2. Successful Resolutions -->
+<div class="bg-surface-container-lowest p-space-base rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-space-sm">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-outline">Resolution Rate</span>
+<span class="material-symbols-outlined text-tertiary text-[20px]">task_alt</span>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">98.7%</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] truncate">
+          Deterministic Policy Sync
+        </span>
+</div>
+</div>
+<!-- 3. Uncertain Payments -->
+<div class="bg-surface-container-lowest p-space-base rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-6 -bottom-6 w-20 h-20 bg-secondary-container/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between text-on-surface-variant mb-space-sm">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-outline">Uncertain State</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">warning_amber</span>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-lg text-headline-lg font-bold text-secondary tracking-tight">23</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-semibold">Active Divergence</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline text-[11px] truncate">
+          Verification loop engaged
+        </span>
+</div>
+</div>
+<!-- 4. AI Decisions -->
+<div class="bg-surface-container-lowest p-space-base rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-space-sm">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-outline">AI Decisions</span>
+<span class="material-symbols-outlined text-secondary-container text-[20px]">neurology</span>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">1,284</span>
+<div class="flex items-center gap-space-2xs text-tertiary">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+<span class="font-label-code-sm text-label-code-sm font-semibold text-[11px]">100% Policy Valid</span>
+</div>
+</div>
+</div>
+<!-- 5. Reconciliation Parity -->
+<div class="bg-surface-container-lowest p-space-base rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-space-sm">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-outline">Recon Status</span>
+<span class="material-symbols-outlined text-primary text-[20px]">sync</span>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">99.9%</span>
+<div class="flex items-center gap-space-2xs text-outline">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="font-body-sm text-body-sm text-[11px]">Ledgers in zero-drift</span>
+</div>
+</div>
+</div>
+<!-- 6. Real Money Mutations (Risk Safeguard) -->
+<div class="bg-surface-container p-space-base rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between text-on-surface mb-space-sm">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-primary font-bold">Risk Exposure</span>
+<span class="material-symbols-outlined text-tertiary text-[20px]">lock_reset</span>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<span class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">₹0.00</span>
+<div class="inline-flex items-center gap-space-2xs px-1.5 py-0.5 rounded bg-surface-container-lowest text-tertiary font-label-code-sm text-label-code-sm font-bold shadow-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span>
+<span>Zero Real Risk</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Primary Operations Workbench (Asymmetric Grid) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-xl items-start">
+<!-- Left Column: Master State Analytics & Ledgers (8 cols) -->
+<div class="xl:col-span-8 flex flex-col gap-space-xl">
+<!-- Payment State Distribution Panel -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between pb-space-md mb-space-md gap-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">donut_small</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Payment State Distribution</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              High-watermark aggregation across 12,842 in-flight &amp; finalized transaction states.
+            </p>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-code-sm text-label-code-sm px-space-sm py-1 bg-surface-container rounded-lg text-on-surface-variant">
+              T+0 Granularity
+            </span>
+</div>
+</div>
+<!-- Composite Distribution Visual Bar -->
+<div class="w-full h-4 bg-surface-container-low rounded-full overflow-hidden flex mb-space-lg shadow-inner">
+<div class="bg-tertiary-container hover:opacity-90 transition-opacity" style="width: 78.96%;" title="CAPTURED: 10,140 (78.96%)"></div>
+<div class="bg-primary hover:opacity-90 transition-opacity" style="width: 11.05%;" title="PENDING_RAIL: 1,420 (11.05%)"></div>
+<div class="bg-primary-fixed-dim hover:opacity-90 transition-opacity" style="width: 3.60%;" title="VERIFYING: 462 (3.60%)"></div>
+<div class="bg-error hover:opacity-90 transition-opacity" style="width: 3.21%;" title="FAILED: 412 (3.21%)"></div>
+<div class="bg-surface-variant hover:opacity-90 transition-opacity" style="width: 2.43%;" title="CREATED: 312 (2.43%)"></div>
+<div class="bg-tertiary hover:opacity-90 transition-opacity" style="width: 0.33%;" title="RECONCILED: 43 (0.33%)"></div>
+<div class="bg-secondary-container hover:opacity-90 transition-opacity" style="width: 0.18%;" title="UNCERTAIN: 23 (0.18%)"></div>
+<div class="bg-secondary hover:opacity-90 transition-opacity" style="width: 0.14%;" title="COMPENSATING: 18 (0.14%)"></div>
+<div class="bg-error-container hover:opacity-90 transition-opacity" style="width: 0.09%;" title="DUPLICATE_SUSPECTED: 12 (0.09%)"></div>
+<div class="bg-outline hover:opacity-90 transition-opacity" style="width: 0.01%;" title="MANUAL_REVIEW: 2 (0.01%)"></div>
+</div>
+<!-- State Breakdown Metric Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-space-sm">
+<!-- CAPTURED -->
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-label-code-sm font-semibold text-tertiary">CAPTURED</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">78.96%</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-bold">10,140</div>
+</div>
+<!-- PENDING_RAIL -->
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-label-code-sm font-semibold text-primary">PENDING_RAIL</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">11.05%</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-bold">1,420</div>
+</div>
+<!-- VERIFYING -->
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-label-code-sm font-semibold text-primary-container">VERIFYING</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">3.60%</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-bold">462</div>
+</div>
+<!-- FAILED -->
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-label-code-sm font-semibold text-error">FAILED</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">3.21%</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-bold">412</div>
+</div>
+<!-- CREATED -->
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-label-code-sm font-semibold text-on-surface-variant">CREATED</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">2.43%</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-bold">312</div>
+</div>
+<!-- RECONCILED -->
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-label-code-sm font-semibold text-tertiary">RECONCILED</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">0.33%</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-bold">43</div>
+</div>
+<!-- UNCERTAIN -->
+<div class="p-space-sm rounded-lg bg-surface-container-high/50 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-label-code-sm font-bold text-secondary">UNCERTAIN</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary">0.18%</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-secondary font-bold">23</div>
+</div>
+<!-- COMPENSATING -->
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-label-code-sm font-semibold text-secondary-container">COMPENSATING</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">0.14%</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-bold">18</div>
+</div>
+<!-- DUPLICATE_SUSPECTED -->
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-label-code-sm font-semibold text-error">DUP_SUSPECT</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">0.09%</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-bold">12</div>
+</div>
+<!-- MANUAL_REVIEW -->
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-label-code-sm font-semibold text-outline">MANUAL_REV</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">0.01%</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-bold">2</div>
+</div>
+</div>
+</div>
+<!-- Recent Payments Workbench Table -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<!-- Table Header Context Bar -->
+<div class="p-space-base flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px]">receipt_long</span>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Recent Payments</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Real-time ledger entries filtered by active AI resolution policies</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="relative w-48 sm:w-64">
+<span class="material-symbols-outlined absolute left-space-xs top-1/2 -translate-y-1/2 text-[16px] text-outline">filter_list</span>
+<input class="w-full pl-7 pr-3 py-1 bg-surface-container-low rounded-lg font-label-code-sm text-label-code-sm text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-high transition-colors" id="payment-table-filter" onkeyup="filterPaymentsTable()" placeholder="Filter ID, State, Policy..." type="text"/>
+</div>
+<button class="h-8 px-space-sm bg-surface-container-low hover:bg-surface-container text-on-surface-variant rounded-lg font-label-code-sm text-label-code-sm inline-flex items-center gap-1 transition-colors" onclick="downloadCSV()">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+              Export
+            </button>
+</div>
+</div>
+<!-- Master Data Matrix -->
+<div class="overflow-x-auto">
+<table class="w-full text-left" id="payments-table">
+<thead>
+<tr class="bg-surface-container-low text-outline font-label-caps text-label-caps uppercase tracking-wider select-none">
+<th class="py-space-sm px-space-base">Payment ID</th>
+<th class="py-space-sm px-space-sm text-right">Amount</th>
+<th class="py-space-sm px-space-sm">Provider</th>
+<th class="py-space-sm px-space-sm">State</th>
+<th class="py-space-sm px-space-base">AI Resolution / Policy</th>
+<th class="py-space-sm px-space-sm text-center">Risk</th>
+<th class="py-space-sm px-space-sm">Timestamp</th>
+<th class="py-space-sm px-space-base text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low font-body-sm text-body-sm text-on-surface">
+<!-- Row 1: pay_demo_8F92a -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group">
+<td class="py-space-sm px-space-base font-label-code-md text-label-code-md font-semibold text-primary">
+<div class="flex items-center gap-space-2xs">
+<span>pay_demo_8F92a</span>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity text-outline hover:text-on-surface" onclick="copyToClipboard('pay_demo_8F92a')" title="Copy ID">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-space-sm px-space-sm text-right font-label-code-md text-label-code-md font-bold text-on-surface">₹1,499.00</td>
+<td class="py-space-sm px-space-sm">
+<div class="flex items-center gap-space-2xs text-on-surface-variant font-label-code-sm text-label-code-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">credit_card</span>
+                    Razorpay
+                  </div>
+</td>
+<td class="py-space-sm px-space-sm">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded-lg bg-surface-container-high text-secondary font-label-code-sm text-label-code-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                    UNCERTAIN
+                  </span>
+</td>
+<td class="py-space-sm px-space-base">
+<div class="flex items-center gap-space-2xs text-secondary font-medium">
+<span class="material-symbols-outlined text-[16px] animate-spin">sync</span>
+<span>AI: Inspecting Timeout</span>
+</div>
+</td>
+<td class="py-space-sm px-space-sm text-center">
+<span class="px-space-xs py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-code-sm text-label-code-sm font-semibold">
+                    Med
+                  </span>
+</td>
+<td class="py-space-sm px-space-sm font-label-code-sm text-label-code-sm text-outline">12:41:02</td>
+<td class="py-space-sm px-space-base text-right">
+<button class="px-space-sm py-1 bg-secondary text-on-secondary hover:bg-secondary-container rounded-lg font-label-code-sm text-label-code-sm font-medium shadow-xs transition-all" onclick="inspectPayment('pay_demo_8F92a')">
+                    Inspect
+                  </button>
+</td>
+</tr>
+<!-- Row 2: pay_live_9381b -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group">
+<td class="py-space-sm px-space-base font-label-code-md text-label-code-md font-semibold text-primary">
+<div class="flex items-center gap-space-2xs">
+<span>pay_live_9381b</span>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity text-outline hover:text-on-surface" onclick="copyToClipboard('pay_live_9381b')" title="Copy ID">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-space-sm px-space-sm text-right font-label-code-md text-label-code-md font-bold text-on-surface">₹24,500.00</td>
+<td class="py-space-sm px-space-sm">
+<div class="flex items-center gap-space-2xs text-on-surface-variant font-label-code-sm text-label-code-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">credit_card</span>
+                    Razorpay
+                  </div>
+</td>
+<td class="py-space-sm px-space-sm">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded-lg bg-tertiary-fixed text-on-tertiary-fixed font-label-code-sm text-label-code-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    CAPTURED
+                  </span>
+</td>
+<td class="py-space-sm px-space-base">
+<span class="text-tertiary font-medium flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+                    Auto-reconciled
+                  </span>
+</td>
+<td class="py-space-sm px-space-sm text-center">
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm">
+                    Low
+                  </span>
+</td>
+<td class="py-space-sm px-space-sm font-label-code-sm text-label-code-sm text-outline">12:40:48</td>
+<td class="py-space-sm px-space-base text-right">
+<button class="px-space-sm py-1 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-lg font-label-code-sm text-label-code-sm font-medium transition-colors" onclick="viewPayment('pay_live_9381b')">
+                    View
+                  </button>
+</td>
+</tr>
+<!-- Row 3: pay_sync_1102c -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group">
+<td class="py-space-sm px-space-base font-label-code-md text-label-code-md font-semibold text-primary">
+<div class="flex items-center gap-space-2xs">
+<span>pay_sync_1102c</span>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity text-outline hover:text-on-surface" onclick="copyToClipboard('pay_sync_1102c')" title="Copy ID">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-space-sm px-space-sm text-right font-label-code-md text-label-code-md font-bold text-on-surface">₹4,200.00</td>
+<td class="py-space-sm px-space-sm">
+<div class="flex items-center gap-space-2xs text-on-surface-variant font-label-code-sm text-label-code-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">credit_card</span>
+                    Razorpay
+                  </div>
+</td>
+<td class="py-space-sm px-space-sm">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded-lg bg-primary-fixed text-on-primary-fixed font-label-code-sm text-label-code-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                    VERIFYING
+                  </span>
+</td>
+<td class="py-space-sm px-space-base">
+<span class="text-primary font-label-code-sm text-label-code-sm flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-[16px]">security</span>
+                    Policy Gate POL-802
+                  </span>
+</td>
+<td class="py-space-sm px-space-sm text-center">
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm">
+                    Low
+                  </span>
+</td>
+<td class="py-space-sm px-space-sm font-label-code-sm text-label-code-sm text-outline">12:40:15</td>
+<td class="py-space-sm px-space-base text-right">
+<button class="px-space-sm py-1 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-lg font-label-code-sm text-label-code-sm font-medium transition-colors" onclick="viewPayment('pay_sync_1102c')">
+                    View
+                  </button>
+</td>
+</tr>
+<!-- Row 4: pay_fail_4492d -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group">
+<td class="py-space-sm px-space-base font-label-code-md text-label-code-md font-semibold text-primary">
+<div class="flex items-center gap-space-2xs">
+<span>pay_fail_4492d</span>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity text-outline hover:text-on-surface" onclick="copyToClipboard('pay_fail_4492d')" title="Copy ID">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-space-sm px-space-sm text-right font-label-code-md text-label-code-md font-bold text-on-surface">₹850.00</td>
+<td class="py-space-sm px-space-sm">
+<div class="flex items-center gap-space-2xs text-on-surface-variant font-label-code-sm text-label-code-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">credit_card</span>
+                    Razorpay
+                  </div>
+</td>
+<td class="py-space-sm px-space-sm">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded-lg bg-error-container text-on-error-container font-label-code-sm text-label-code-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                    FAILED
+                  </span>
+</td>
+<td class="py-space-sm px-space-base">
+<span class="text-error font-body-sm text-body-sm flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-[16px]">cancel</span>
+                    3DS Aborted by User
+                  </span>
+</td>
+<td class="py-space-sm px-space-sm text-center">
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm">
+                    Low
+                  </span>
+</td>
+<td class="py-space-sm px-space-sm font-label-code-sm text-label-code-sm text-outline">12:39:55</td>
+<td class="py-space-sm px-space-base text-right">
+<button class="px-space-sm py-1 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-lg font-label-code-sm text-label-code-sm font-medium transition-colors" onclick="viewPayment('pay_fail_4492d')">
+                    View
+                  </button>
+</td>
+</tr>
+<!-- Row 5: pay_dup_7721e -->
+<tr class="hover:bg-surface-container-low/70 transition-colors group">
+<td class="py-space-sm px-space-base font-label-code-md text-label-code-md font-semibold text-primary">
+<div class="flex items-center gap-space-2xs">
+<span>pay_dup_7721e</span>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity text-outline hover:text-on-surface" onclick="copyToClipboard('pay_dup_7721e')" title="Copy ID">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-space-sm px-space-sm text-right font-label-code-md text-label-code-md font-bold text-on-surface">₹12,000.00</td>
+<td class="py-space-sm px-space-sm">
+<div class="flex items-center gap-space-2xs text-on-surface-variant font-label-code-sm text-label-code-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">credit_card</span>
+                    Razorpay
+                  </div>
+</td>
+<td class="py-space-sm px-space-sm">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded-lg bg-surface-container-high text-secondary font-label-code-sm text-label-code-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+                    DUP_SUSPECT
+                  </span>
+</td>
+<td class="py-space-sm px-space-base">
+<span class="text-secondary font-medium flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-[16px]">call_split</span>
+                    Idempotency Intercept
+                  </span>
+</td>
+<td class="py-space-sm px-space-sm text-center">
+<span class="px-space-xs py-0.5 rounded bg-error-container text-on-error-container font-label-code-sm text-label-code-sm font-bold">
+                    High
+                  </span>
+</td>
+<td class="py-space-sm px-space-sm font-label-code-sm text-label-code-sm text-outline">12:38:10</td>
+<td class="py-space-sm px-space-base text-right">
+<button class="px-space-sm py-1 bg-surface-container-high hover:bg-surface-dim text-secondary font-label-code-sm text-label-code-sm font-bold rounded-lg transition-colors" onclick="reviewPayment('pay_dup_7721e')">
+                    Review
+                  </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Telemetry Digest -->
+<div class="p-space-base bg-surface-container-lowest flex flex-col sm:flex-row items-center justify-between gap-space-sm text-on-surface-variant font-label-code-sm text-label-code-sm">
+<div class="flex items-center gap-space-sm">
+<span>Showing 5 of 12,842 ledger traces</span>
+<span class="text-outline">·</span>
+<span class="text-tertiary">Cryptographic signature active</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1 bg-surface-container rounded hover:bg-surface-container-high disabled:opacity-40" disabled="">Previous</button>
+<button class="px-space-sm py-1 bg-primary text-on-primary rounded font-bold">1</button>
+<button class="px-space-sm py-1 bg-surface-container rounded hover:bg-surface-container-high">2</button>
+<button class="px-space-sm py-1 bg-surface-container rounded hover:bg-surface-container-high">3</button>
+<button class="px-space-sm py-1 bg-surface-container rounded hover:bg-surface-container-high">Next</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Observability & Chronological Telemetry (4 cols) -->
+<div class="xl:col-span-4 flex flex-col gap-space-xl">
+<!-- System Resilience Observability Card -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+<div class="flex items-center justify-between pb-space-sm mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[20px]">vital_signs</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">System Resilience</h2>
+</div>
+<span class="inline-flex items-center gap-1 font-label-code-sm text-label-code-sm px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-semibold">
+            100% HEALTH
+          </span>
+</div>
+<!-- Metric Stream List -->
+<div class="flex flex-col gap-space-sm">
+<!-- Payment Processing -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Payment Processing</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-sm text-label-code-sm text-tertiary font-bold">Operational</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">(18ms)</span>
+</div>
+</div>
+<!-- Webhook Ingestion -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Webhook Ingestion</span>
+</div>
+<div class="flex items-center gap-space-xs text-right">
+<span class="font-label-code-sm text-label-code-sm text-tertiary font-bold">Operational</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">(0 drop, 12 sup)</span>
+</div>
+</div>
+<!-- AI Resolution Engine -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">AI Resolution Engine</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-sm text-label-code-sm text-tertiary font-bold">Operational</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">(p95: 42ms)</span>
+</div>
+</div>
+<!-- Database / Ledger -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Database / Ledger</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-sm text-label-code-sm text-tertiary font-bold">Operational</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">(0 contention)</span>
+</div>
+</div>
+<!-- Redis Outbox -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Redis Outbox</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-sm text-label-code-sm text-tertiary font-bold">Operational</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">(0 lag)</span>
+</div>
+</div>
+<!-- Reconciliation Engine -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Reconciliation</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-sm text-label-code-sm text-tertiary font-bold">Operational</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">(T+0 live)</span>
+</div>
+</div>
+<!-- Audit Pipeline -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Audit Pipeline</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-sm text-label-code-sm text-tertiary font-bold">Operational</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">(SHA-256)</span>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-md flex items-center justify-between text-on-surface-variant font-label-code-sm text-label-code-sm">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary">cloud_done</span>
+            Multi-region active-active
+          </span>
+<span class="text-outline">AP-South-1</span>
+</div>
+</div>
+<!-- AI Resolution Activity Telemetry Feed -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+<div class="flex items-center justify-between pb-space-sm mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary-container text-[20px]">timeline</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">AI Resolution Activity</h2>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-outline">Realtime Feed</span>
+</div>
+<!-- Telemetry Timeline -->
+<div class="relative pl-6 flex flex-col gap-space-base before:content-[''] before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-container-high" id="telemetry-feed">
+<!-- Event 1 -->
+<div class="relative flex flex-col gap-1">
+<span class="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-label-code-sm font-bold text-on-surface">12:41:08</span>
+<span class="font-label-code-sm text-[10px] text-tertiary font-semibold uppercase">Auto-Reconciled</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+              Rail confirmation received · <span class="font-label-code-sm text-label-code-sm font-semibold text-primary">VERIFYING</span> → <span class="font-label-code-sm text-label-code-sm font-semibold text-tertiary">CAPTURED</span>
+</p>
+</div>
+<!-- Event 2 -->
+<div class="relative flex flex-col gap-1">
+<span class="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-primary"></span>
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-label-code-sm font-bold text-on-surface">12:41:05</span>
+<span class="font-label-code-sm text-[10px] text-primary font-semibold uppercase">State Transit</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+              State transition: <span class="font-label-code-sm text-label-code-sm font-semibold text-secondary">UNCERTAIN</span> → <span class="font-label-code-sm text-label-code-sm font-semibold text-primary">VERIFYING</span> (Policy approved)
+            </p>
+</div>
+<!-- Event 3 -->
+<div class="relative flex flex-col gap-1">
+<span class="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-secondary-container"></span>
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-label-code-sm font-bold text-on-surface">12:41:04</span>
+<span class="font-label-code-sm text-[10px] text-secondary font-semibold uppercase">Safety Invariant</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+              Policy Engine validated hypothesis (Zero duplicate debit risk guarantee)
+            </p>
+</div>
+<!-- Event 4 -->
+<div class="relative flex flex-col gap-1">
+<span class="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-label-code-sm font-bold text-on-surface">12:41:03</span>
+<span class="font-label-code-sm text-[10px] text-secondary font-semibold uppercase">Agent Hypo</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+              AI Detective identified payment timeout (<span class="font-label-code-sm text-label-code-sm font-bold text-tertiary">Confidence 98.4%</span>)
+            </p>
+</div>
+<!-- Event 5 -->
+<div class="relative flex flex-col gap-1">
+<span class="absolute -left-6 top-1 w-2.5 h-2.5 rounded-full bg-outline"></span>
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-label-code-sm font-bold text-on-surface">12:40:11</span>
+<span class="font-label-code-sm text-[10px] text-outline font-semibold uppercase">Ingestion</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+              Razorpay webhook captured: <span class="font-label-code-sm text-label-code-sm text-primary">auth_rzp_9921a</span>
+</p>
+</div>
+</div>
+<button class="w-full mt-space-md py-space-xs text-center font-label-code-sm text-label-code-sm text-primary hover:text-primary-container bg-surface-container-low hover:bg-surface-container rounded-lg transition-colors flex items-center justify-center gap-1" onclick="expandTelemetry()">
+<span>Open Full Trace Stream</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Client-side Micro-Interactions Script -->
+<script>
+    function showToast(message) {
+      const banner = document.getElementById('toast-banner');
+      const text = document.getElementById('toast-message');
+      text.innerText = message;
+      banner.classList.remove('translate-y-20', 'opacity-0');
+      banner.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        banner.classList.remove('translate-y-0', 'opacity-100');
+        banner.classList.add('translate-y-20', 'opacity-0');
+      }, 2600);
+    }
+
+    function setTimeRange(btn, range) {
+      document.querySelectorAll('.time-range-btn').forEach(b => {
+        b.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm', 'font-semibold');
+        b.classList.add('text-on-surface-variant');
+      });
+      btn.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm', 'font-semibold');
+      btn.classList.remove('text-on-surface-variant');
+      showToast(`Time window adjusted: ${range.toUpperCase()} telemetry active`);
+    }
+
+    function refreshDashboard(btn) {
+      const icon = document.getElementById('refresh-icon');
+      icon.classList.add('animate-spin');
+      showToast('Re-verifying ledger state and outbox sync...');
+      setTimeout(() => {
+        icon.classList.remove('animate-spin');
+        const kpi = document.getElementById('kpi-events');
+        kpi.innerText = '12,845';
+        showToast('Ledger and AI gates synchronized');
+      }, 600);
+    }
+
+    function triggerHealthAudit(btn) {
+      showToast('Running SHA-256 Audit: 12,842 transactions validated 100% pure');
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard?.writeText(text);
+      showToast(`Copied ${text} to clipboard`);
+    }
+
+    function filterPaymentsTable() {
+      const input = document.getElementById('payment-table-filter');
+      const filter = input.value.toLowerCase();
+      const rows = document.querySelectorAll('#payments-table tbody tr');
+
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+      });
+    }
+
+    function inspectPayment(id) {
+      showToast(`Launching AI Inspector Drawer for ${id}`);
+    }
+
+    function viewPayment(id) {
+      showToast(`Loading immutable ledger proof for ${id}`);
+    }
+
+    function reviewPayment(id) {
+      showToast(`Intercept review activated for ${id}`);
+    }
+
+    function downloadCSV() {
+      showToast('Exporting cryptographic payment ledger (CSV)...');
+    }
+
+    function expandTelemetry() {
+      showToast('Navigating to full Event Stream trace logs');
+    }
+  </script>
+</div></main></div></body></html>

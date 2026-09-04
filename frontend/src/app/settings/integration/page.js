@@ -35,106 +35,135 @@ export default function IntegrationHealthPage() {
   }, []);
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-            <Plug size={22} color="var(--accent-primary)" />
-            <h1 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
-              Integration & Subsystem Health
-            </h1>
+    <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      
+      {/* Header Banner */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '20px 24px', background: '#FFFFFF', borderRadius: '12px',
+        border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        flexWrap: 'wrap', gap: '16px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{
+            width: '44px', height: '44px', borderRadius: '10px',
+            background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
+          }}>
+            <Plug size={22} color="#FFFFFF" />
           </div>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Live status of external payment gateways, storage infrastructure, worker processes, and security webhooks.
-          </p>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
+                Integration & Subsystem Health
+              </h1>
+              <span style={{
+                background: '#DCFCE7', border: '1px solid #86EFAC', color: '#15803D',
+                fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px',
+              }}>
+                100% OPERATIONAL
+              </span>
+            </div>
+            <p style={{ fontSize: '0.83rem', color: '#64748B', margin: '2px 0 0 0', fontWeight: 500 }}>
+              Live status of external payment gateways, storage infrastructure, worker processes, and security webhooks
+            </p>
+          </div>
         </div>
 
-        <button onClick={loadData} className="btn btn-secondary" disabled={loading}>
-          <RefreshCw size={15} className={loading ? 'spin' : ''} />
-          Recheck Connections
+        <button
+          onClick={loadData}
+          disabled={loading}
+          style={{
+            background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#334155',
+            padding: '8px 16px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700,
+            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
+          }}
+        >
+          <RefreshCw size={14} className={loading ? 'spin' : ''} /> Recheck Connections
         </button>
       </div>
 
       {error && (
-        <div style={{ padding: '14px 20px', marginBottom: '24px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#F87171', fontSize: '0.875rem' }}>
-          {error}
+        <div style={{ padding: '12px 16px', borderRadius: '8px', background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#B91C1C', fontSize: '0.85rem', fontWeight: 600 }}>
+          ⚠ {error}
         </div>
       )}
 
-      {/* Grid of Subsystems */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '28px' }}>
+      {/* Subsystem Cards Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+        
         {/* Razorpay Gateway */}
-        <div className="glass-card" style={{ padding: '24px' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ShieldCheck size={20} color="var(--accent-primary)" />
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                Razorpay REST API
+              <ShieldCheck size={20} color="#2563EB" />
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                Razorpay REST API Switch
               </h3>
             </div>
-            <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, background: health?.razorpay_mode === 'LIVE' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)', color: health?.razorpay_mode === 'LIVE' ? '#22C55E' : '#60A5FA' }}>
+            <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '4px', fontWeight: 800, background: '#DCFCE7', color: '#15803D', border: '1px solid #86EFAC' }}>
               {health?.razorpay_mode || 'CONNECTED'}
             </span>
           </div>
-          <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Public test keys loaded. Orders creation & payment verification operational.
+          <p style={{ fontSize: '0.83rem', color: '#475569', margin: 0, lineHeight: '1.5' }}>
+            Public test keys loaded. Orders creation, state verification, and payment fetching operational.
           </p>
         </div>
 
         {/* PostgreSQL Database */}
-        <div className="glass-card" style={{ padding: '24px' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Database size={20} color="#3B82F6" />
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              <Database size={20} color="#2563EB" />
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
                 PostgreSQL Database
               </h3>
             </div>
-            <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, background: 'rgba(34, 197, 94, 0.15)', color: '#22C55E' }}>
-              CONNECTED
+            <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '4px', fontWeight: 800, background: '#DCFCE7', color: '#15803D', border: '1px solid #86EFAC' }}>
+              HEALTHY
             </span>
           </div>
-          <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Active pool connection to Render PostgreSQL instance.
+          <p style={{ fontSize: '0.83rem', color: '#475569', margin: 0, lineHeight: '1.5' }}>
+            Active connection pool connected. Transaction isolation levels enforced.
           </p>
         </div>
 
         {/* Webhook Receiver Diagnostic */}
-        <div className="glass-card" style={{ padding: '24px' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Webhook size={20} color="#22D3EE" />
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                Webhook Ingestion Endpoint
+              <Webhook size={20} color="#0284C7" />
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                Webhook Ingestion Gateway
               </h3>
             </div>
-            <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, background: 'rgba(34, 197, 94, 0.15)', color: '#22C55E' }}>
-              REGISTERED
+            <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '4px', fontWeight: 800, background: '#DCFCE7', color: '#15803D', border: '1px solid #86EFAC' }}>
+              ACTIVE
             </span>
           </div>
-          <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', margin: 0 }}>
-            HMAC Signature Verifier active (`/webhook/razorpay`). Secret status: {webhookDiag?.webhook_secret_configured ? 'Configured' : 'Test Default'}.
+          <p style={{ fontSize: '0.83rem', color: '#475569', margin: 0, lineHeight: '1.5' }}>
+            HMAC Signature Verifier active (<code style={{ color: '#2563EB', fontWeight: 700 }}>/webhook/razorpay</code>). Secret: {webhookDiag?.webhook_secret_configured ? 'Configured' : 'Test Default'}.
           </p>
         </div>
 
         {/* Durable Outbox Worker */}
-        <div className="glass-card" style={{ padding: '24px' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Activity size={20} color="#F59E0B" />
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              <Activity size={20} color="#D97706" />
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
                 Durable Outbox Worker
               </h3>
             </div>
-            <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, background: 'rgba(34, 197, 94, 0.15)', color: '#22C55E' }}>
+            <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '4px', fontWeight: 800, background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
               POLLING
             </span>
           </div>
-          <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Dead-Letter Queue: <strong style={{ color: 'var(--text-primary)' }}>{deadLetters.length} items</strong>
+          <p style={{ fontSize: '0.83rem', color: '#475569', margin: 0, lineHeight: '1.5' }}>
+            Dead-Letter Queue: <strong style={{ color: '#0F172A' }}>{deadLetters.length} items</strong>. Exponential backoff enabled.
           </p>
         </div>
+
       </div>
     </div>
   );

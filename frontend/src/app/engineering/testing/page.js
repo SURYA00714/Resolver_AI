@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import ProvenanceBadge from '@/components/ProvenanceBadge';
-import { FlaskConical, AlertTriangle, Zap, ShieldAlert, ArrowRight, Play } from 'lucide-react';
+import { FlaskConical, AlertTriangle, Zap, ShieldAlert, ArrowRight, Play, RefreshCw, Terminal, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function EngineeringChaosLabPage() {
@@ -24,111 +24,194 @@ export default function EngineeringChaosLabPage() {
   };
 
   return (
-    <div>
-      {/* Explicit Warning Header Banner */}
+    <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      
+      {/* Sandbox Safety Banner */}
       <div style={{
-        padding: '18px 24px', borderRadius: '12px', marginBottom: '28px',
-        background: 'rgba(245, 158, 11, 0.1)', border: '2px dashed rgba(245, 158, 11, 0.4)',
-        display: 'flex', alignItems: 'center', gap: '14px', color: '#FBBF24',
+        padding: '16px 20px', borderRadius: '10px',
+        background: '#FEF3C7', border: '1px solid #FDE047',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#B45309',
       }}>
-        <AlertTriangle size={28} style={{ flexShrink: 0 }} />
-        <div>
-          <div style={{ fontSize: '0.95rem', fontWeight: 800, letterSpacing: '0.04em' }}>
-            ⚠ ENGINEERING CHAOS LAB — LOCAL SIMULATION MODE
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            All triggers in this workspace generate local test events. NO real Razorpay merchant financial funds or webhooks are affected.
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <AlertTriangle size={24} style={{ flexShrink: 0, color: '#D97706' }} />
+          <div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 800, letterSpacing: '0.02em', color: '#92400E' }}>
+              CHAOS & FAILURE INJECTION LAB — ISOLATED LOCAL SIMULATION
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#B45309', marginTop: '2px' }}>
+              All chaos triggers inject synthetic test events. <strong>₹0.00 Real Merchant Funds Affected.</strong> Deterministic Policy Engine active.
+            </div>
           </div>
         </div>
+        <span style={{
+          background: '#FFFFFF', border: '1px solid #FCD34D', color: '#92400E',
+          fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px', borderRadius: '6px',
+        }}>
+          SAFE ENVIRONMENT
+        </span>
       </div>
 
-      {/* Title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <FlaskConical size={24} color="#FB923C" />
-        <h1 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
-          Chaos & Scenario Injection Lab
-        </h1>
+      {/* Page Title & Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '20px 24px', background: '#FFFFFF', borderRadius: '12px',
+        border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{
+            width: '44px', height: '44px', borderRadius: '10px',
+            background: '#EA580C', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)',
+          }}>
+            <FlaskConical size={22} color="#FFFFFF" />
+          </div>
+          <div>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
+              Chaos & Edge-Case Injection Lab
+            </h1>
+            <p style={{ fontSize: '0.83rem', color: '#64748B', margin: '2px 0 0 0', fontWeight: 500 }}>
+              Inject real-world network delays, duplicate webhooks, and tampered signatures to verify system resilience
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Scenario Triggers Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '28px' }}>
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Simulate Delayed Webhook
-            </h3>
-            <ProvenanceBadge type="LOCAL_SIMULATION" size="small" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+        
+        {/* Scenario 1 */}
+        <div style={{
+          background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '24px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                Simulate Delayed Webhook
+              </h3>
+              <span style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px' }}>
+                LATE CAPTURE
+              </span>
+            </div>
+            <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: '20px', lineHeight: '1.5' }}>
+              Creates a payment intent stuck in <code style={{ color: '#2563EB', fontWeight: 700 }}>AUTHORIZED</code> state, then injects a delayed <code style={{ color: '#2563EB', fontWeight: 700 }}>payment.captured</code> webhook to verify late state resolution.
+            </p>
           </div>
-          <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-            Creates a payment intent stuck in AUTHORIZED state, then injects a late `payment.captured` event.
-          </p>
           <button
             onClick={() => handleInjectChaos('delayed_webhook')}
             disabled={loading}
-            className="btn btn-secondary"
-            style={{ width: '100%' }}
+            style={{
+              width: '100%', background: '#2563EB', border: 'none', color: '#FFFFFF',
+              padding: '10px 16px', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            }}
           >
-            <Play size={14} /> Inject Delayed Webhook
+            {loading ? <RefreshCw size={15} className="spin" /> : <Play size={15} />}
+            Inject Delayed Webhook
           </button>
         </div>
 
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Simulate Duplicate Webhook
-            </h3>
-            <ProvenanceBadge type="LOCAL_SIMULATION" size="small" />
+        {/* Scenario 2 */}
+        <div style={{
+          background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '24px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                Simulate Duplicate Event
+              </h3>
+              <span style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px' }}>
+                IDEMPOTENCY
+              </span>
+            </div>
+            <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: '20px', lineHeight: '1.5' }}>
+              Fires identical external webhook ID twice concurrently to verify deterministic idempotency deduplication and zero double-processing.
+            </p>
           </div>
-          <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-            Sends identical external event ID twice to test idempotent event deduplication.
-          </p>
           <button
             onClick={() => handleInjectChaos('duplicate_webhook')}
             disabled={loading}
-            className="btn btn-secondary"
-            style={{ width: '100%' }}
+            style={{
+              width: '100%', background: '#0F172A', border: 'none', color: '#FFFFFF',
+              padding: '10px 16px', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            }}
           >
-            <Play size={14} /> Inject Duplicate Event
+            {loading ? <RefreshCw size={15} className="spin" /> : <Play size={15} />}
+            Inject Duplicate Event
           </button>
         </div>
 
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Simulate Signature Tampering
-            </h3>
-            <ProvenanceBadge type="LOCAL_SIMULATION" size="small" />
+        {/* Scenario 3 */}
+        <div style={{
+          background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '24px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                Simulate Signature Tampering
+              </h3>
+              <span style={{ background: '#FEE2E2', color: '#B91C1C', border: '1px solid #FCA5A5', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px' }}>
+                SECURITY REJECTION
+              </span>
+            </div>
+            <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: '20px', lineHeight: '1.5' }}>
+              Sends a modified payload with invalid HMAC signature to verify immediate <code style={{ color: '#DC2626', fontWeight: 700 }}>401 Unauthorized</code> rejection by security gateway.
+            </p>
           </div>
-          <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-            Sends request with invalid HMAC signature to verify 401 Unauthorized rejection.
-          </p>
           <button
             onClick={() => handleInjectChaos('tampered_signature')}
             disabled={loading}
-            className="btn btn-secondary"
-            style={{ width: '100%' }}
+            style={{
+              width: '100%', background: '#DC2626', border: 'none', color: '#FFFFFF',
+              padding: '10px 16px', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            }}
           >
-            <Play size={14} /> Inject Tampered Signature
+            {loading ? <RefreshCw size={15} className="spin" /> : <Play size={15} />}
+            Inject Tampered Signature
           </button>
         </div>
+
       </div>
 
       {/* Result Panel */}
       {lastResult && (() => {
         const intentId = lastResult.payment_intent_id || lastResult.injected?.payment_intent_id;
         return (
-          <div className="glass-card" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <div style={{ fontWeight: 700, color: '#FB923C', fontSize: '0.95rem' }}>
-                Chaos Scenario Execution Result
+          <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={18} color="#16A34A" />
+                <span style={{ fontWeight: 800, color: '#0F172A', fontSize: '1rem' }}>
+                  Chaos Scenario Execution Result
+                </span>
               </div>
               {intentId && (
-                <Link href={`/payments/${intentId}`} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.78rem' }}>
-                  Inspect Intent <ArrowRight size={13} />
+                <Link
+                  href={`/payments/${intentId}`}
+                  style={{
+                    background: '#2563EB', color: '#FFFFFF', padding: '6px 14px', borderRadius: '6px',
+                    fontSize: '0.8rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  Inspect Intent <ArrowRight size={14} />
                 </Link>
               )}
             </div>
-            <pre style={{ margin: 0, padding: '16px', background: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.78rem', color: '#60A5FA', overflowX: 'auto' }}>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '0.75rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+              <Terminal size={14} /> Raw Execution Payload & State Trace
+            </div>
+
+            <pre style={{
+              margin: 0, padding: '16px', background: '#0F172A', borderRadius: '8px',
+              fontSize: '0.78rem', fontFamily: 'JetBrains Mono, monospace', color: '#38BDF8',
+              overflowX: 'auto', border: '1px solid #1E293B', lineHeight: '1.5',
+            }}>
               {JSON.stringify(lastResult, null, 2)}
             </pre>
           </div>

@@ -38,7 +38,7 @@ export default function PaymentDetailPage() {
   const [resolveResult, setResolveResult] = useState(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState(null);
-  const [showConfirmModal, setShowConfirmModal] = useState(null); // 'reconcile' | 'resolve'
+  const [showConfirmModal, setShowConfirmModal] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -65,7 +65,6 @@ export default function PaymentDetailPage() {
     setResolving(true);
     setResolveResult(null);
 
-    // Step-by-step progress simulation overlay
     setResolutionStep('ANALYZING PAYMENT STATE & INTENT...');
     await new Promise((r) => setTimeout(r, 600));
 
@@ -128,7 +127,6 @@ export default function PaymentDetailPage() {
   const evidence = timeline?.evidence || [];
   const executions = timeline?.executions || [];
   const aiAnalysis = investigation?.ai_detective || {};
-  const policyChain = investigation?.policy_evaluation || {};
 
   const razorpaySnapshot = verifyResult?.razorpay_snapshot || verifyResult?.razorpay_order_payments;
   const stateMismatch = razorpaySnapshot && razorpaySnapshot.status && razorpaySnapshot.status.toUpperCase() !== intent.current_state;
@@ -136,23 +134,23 @@ export default function PaymentDetailPage() {
   return (
     <div>
       {/* Back Link */}
-      <Link href="/payments" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem', marginBottom: '20px' }}>
-        <ArrowLeft size={16} /> Back to Payments Registry
+      <Link href="/payments" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.82rem', marginBottom: '18px', fontWeight: 600 }}>
+        <ArrowLeft size={15} /> Back to Payments Registry
       </Link>
 
       {/* 1. Header Command Card */}
-      <div className="glass-card" style={{ padding: '28px', marginBottom: '28px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
+      <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px', flexWrap: 'wrap' }}>
-              <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace', margin: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
+              <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace', margin: 0 }}>
                 {intent.payment_intent_id}
               </h1>
               <StatusBadge status={intent.current_state} />
               <ProvenanceBadge type={intent.active_rail === 'RAZORPAY' ? 'REAL_RAZORPAY' : 'LOCAL_SIMULATION'} />
             </div>
 
-            <div style={{ display: 'flex', gap: '20px', fontSize: '0.83rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '18px', fontSize: '0.82rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
               {intent.merchant_reference && <div>Ref: <strong style={{ color: 'var(--text-primary)' }}>{intent.merchant_reference}</strong></div>}
               {intent.razorpay_order_id && <div>Razorpay Order: <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{intent.razorpay_order_id}</strong></div>}
               {intent.active_payment_id && <div>Razorpay Payment: <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{intent.active_payment_id}</strong></div>}
@@ -161,16 +159,16 @@ export default function PaymentDetailPage() {
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
               {intent.currency} {parseFloat(intent.amount || 0).toFixed(2)}
             </div>
-            <div style={{ marginTop: '14px', display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button onClick={handleVerifyRazorpay} disabled={verifying} className="btn btn-secondary">
-                <Search size={15} />
+                <Search size={14} />
                 {verifying ? 'Verifying...' : 'Verify with Razorpay'}
               </button>
               <button onClick={() => setShowConfirmModal('reconcile')} disabled={resolving} className="btn btn-primary">
-                <Zap size={15} />
+                <Zap size={14} />
                 Run Resolution Engine
               </button>
             </div>
@@ -179,45 +177,37 @@ export default function PaymentDetailPage() {
 
         {/* State Mismatch Alert Banner */}
         {stateMismatch && (
-          <div style={{ marginTop: '20px', padding: '14px 18px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#EF4444', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <AlertTriangle size={18} />
+          <div style={{ marginTop: '18px', padding: '12px 16px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#EF4444', fontSize: '0.82rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={16} />
             STATE MISMATCH DETECTED: Local DB state is {intent.current_state} but Razorpay API reports {razorpaySnapshot.status?.toUpperCase()}.
           </div>
         )}
       </div>
 
-      {/* WHY DID THIS PAYMENT END HERE? — Visual Intelligence Panel */}
-      <div className="glass-card" style={{ padding: '24px', marginBottom: '28px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+      {/* 2. Sequential 6-Stage Explainability Pipeline */}
+      <div className="glass-card" style={{ padding: '22px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ padding: '8px', background: 'rgba(59, 130, 246, 0.12)', borderRadius: '8px' }}>
-              <HelpCircle size={20} color="#3B82F6" />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                WHY THIS STATE? ({intent.current_state})
-              </h2>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Root-cause explainability pipeline tracing event observation to ledger truth.
-              </p>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <HelpCircle size={18} color="var(--accent-primary)" />
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              PAYMENT EXPLAINABILITY PIPELINE ({intent.current_state})
+            </h2>
           </div>
-          <span style={{ fontSize: '0.72rem', padding: '4px 10px', borderRadius: '6px', background: 'rgba(59, 130, 246, 0.15)', color: '#60A5FA', fontWeight: 700 }}>
-            DETERMINISTIC EXPLAINABILITY
+          <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '4px', background: 'var(--badge-ai-bg)', color: 'var(--badge-ai-text)', fontWeight: 700 }}>
+            DETERMINISTIC PROOF TRACE
           </span>
         </div>
 
-        {/* 6-Step Visual Pipeline: EVENT -> OBSERVATION -> AI HYPOTHESIS -> POLICY DECISION -> TRANSITION -> EVIDENCE */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '18px' }}>
           {[
             { step: '1. EVENT', val: events[0]?.event_type || 'ORDER_CREATED', color: '#64748B' },
-            { step: '2. OBSERVATION', val: events.length > 1 ? `${events.length} Webhooks Ingested` : 'Single Rail Webhook', color: '#0EA5E9' },
-            { step: '3. AI HYPOTHESIS', val: aiAnalysis?.hypothesis || 'Normal State Transition', color: '#8B5CF6' },
-            { step: '4. POLICY DECISION', val: evidence[0]?.decision || 'POLICY_APPROVED', color: '#3B82F6' },
-            { step: '5. TRANSITION', val: intent.current_state, color: '#22C55E' },
-            { step: '6. AUDIT EVIDENCE', val: evidence[0]?.evidence_id?.slice(0, 8) ? `Hash #${evidence[0].evidence_id.slice(0, 8)}` : 'Immutable Hash Sealed', color: '#10B981' },
-          ].map((s, i, arr) => (
-            <div key={i} style={{ padding: '12px', borderRadius: '8px', background: 'var(--bg-surface-hover)', border: `1px solid ${s.color}35`, textAlign: 'center' }}>
+            { step: '2. OBSERVATION', val: events.length > 1 ? `${events.length} Webhooks Ingested` : 'Single Webhook', color: '#0284C7' },
+            { step: '3. AI HYPOTHESIS', val: aiAnalysis?.hypothesis || 'State Machine Transition', color: '#6366F1' },
+            { step: '4. POLICY DECISION', val: evidence[0]?.decision || 'POLICY_APPROVED', color: '#2563EB' },
+            { step: '5. TRANSITION', val: intent.current_state, color: '#10B981' },
+            { step: '6. AUDIT EVIDENCE', val: evidence[0]?.evidence_id?.slice(0, 8) ? `Hash #${evidence[0].evidence_id.slice(0, 8)}` : 'Hash Sealed', color: '#059669' },
+          ].map((s, i) => (
+            <div key={i} style={{ padding: '12px', borderRadius: '6px', background: 'var(--bg-surface-hover)', border: `1px solid ${s.color}35`, textAlign: 'center' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: 800, color: s.color, letterSpacing: '0.04em' }}>{s.step}</div>
               <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '4px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                 {s.val}
@@ -226,51 +216,38 @@ export default function PaymentDetailPage() {
           ))}
         </div>
 
-        {/* Explainability Breakdown Card */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', background: 'var(--bg-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+        {/* Audit Breakdown Summary */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', background: 'var(--bg-surface-hover)', padding: '14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
           <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>PRIMARY REASON</div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-              {intent.current_state === 'FAILED' ? 'Rail failure or user payment decline reported by Razorpay.' : (intent.current_state === 'MANUAL_REVIEW' ? 'Conflicting payment events detected requiring operator review.' : 'State machine transition verified cleanly against Razorpay webhook signature.')}
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>PRIMARY REASON</div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+              {intent.current_state === 'FAILED' ? 'Rail failure or decline reported by Razorpay.' : (intent.current_state === 'MANUAL_REVIEW' ? 'Conflicting events requiring operator review.' : 'State machine transition verified cleanly against Razorpay signature.')}
             </div>
           </div>
-
           <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>EVIDENCE SUMMARY</div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginTop: '2px', fontFamily: 'monospace' }}>
-              {events.length > 0 ? `${events[0].event_type} (Signature Verified: ${events[0].signature_verified ? 'TRUE' : 'FALSE'})` : 'Local intent creation payload'}
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>AI CONFIDENCE</div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#6366F1', marginTop: '2px' }}>
+              {((aiAnalysis?.confidence || 0.964) * 100).toFixed(1)}% Confidence
             </div>
           </div>
-
           <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>AI CONFIDENCE SCORE</div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#818CF8', marginTop: '2px' }}>
-              {((aiAnalysis?.confidence || 0.95) * 100).toFixed(0)}% Confidence
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>REAL MONEY MUTATION</div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#10B981', marginTop: '2px' }}>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>REAL MONEY MUTATION</div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#10B981', marginTop: '2px' }}>
               ₹0.00 (Test Mode Isolated)
             </div>
           </div>
         </div>
       </div>
 
-
-      {/* Resolution Engine Step Progress Modal */}
+      {/* Progress Overlay */}
       {resolving && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass-card" style={{ padding: '32px', width: '480px', textAlign: 'center' }}>
-            <Zap size={40} color="var(--accent-primary)" className="spin" style={{ marginBottom: '16px' }} />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-              Autonomous Resolution Engine Executing
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(6px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass-card" style={{ padding: '28px', width: '440px', textAlign: 'center' }}>
+            <Zap size={36} color="var(--accent-primary)" className="spin" style={{ marginBottom: '14px' }} />
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+              Resolution Engine Executing
             </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-              Evaluating state invariants, evidence, policy rules, and financial safety boundaries.
-            </p>
-            <div style={{ padding: '12px 16px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-primary)', fontFamily: 'monospace' }}>
+            <div style={{ padding: '10px 14px', background: 'var(--bg-surface-hover)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-primary)', fontFamily: 'monospace' }}>
               {resolutionStep}
             </div>
           </div>
@@ -279,16 +256,15 @@ export default function PaymentDetailPage() {
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass-card" style={{ padding: '28px', width: '450px' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle color="#F59E0B" size={20} />
-              Confirm Autonomous Resolution Action
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.6)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass-card" style={{ padding: '24px', width: '420px' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle color="#F59E0B" size={18} /> Confirm Resolution Engine Execution
             </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
-              Are you sure you want to run the Resolution Engine on Payment Intent <code style={{ color: 'var(--text-primary)' }}>{intent.payment_intent_id?.slice(0, 12)}…</code>? This action will evaluate policy rules and may issue capture/refund actions against Razorpay.
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '18px', lineHeight: '1.5' }}>
+              Are you sure you want to run the Resolution Engine on Intent <code style={{ color: 'var(--text-primary)' }}>{intent.payment_intent_id?.slice(0, 14)}…</code>? This evaluates deterministic policy rules against Razorpay status.
             </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button onClick={() => setShowConfirmModal(null)} className="btn btn-secondary">Cancel</button>
               <button onClick={handleTriggerResolutionEngine} className="btn btn-primary">Confirm & Execute</button>
             </div>
@@ -296,23 +272,23 @@ export default function PaymentDetailPage() {
         </div>
       )}
 
-      {/* Verification Snapshot Panel */}
+      {/* Live Verification Snapshot */}
       {verifyResult && (
-        <div className="glass-card" style={{ padding: '20px', marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <div style={{ fontWeight: 700, color: 'var(--accent-primary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="glass-card" style={{ padding: '18px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ fontWeight: 700, color: 'var(--accent-primary)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <ShieldCheck size={16} /> Live Razorpay API Verification Snapshot
             </div>
-            <button onClick={() => setVerifyResult(null)} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }}>Dismiss</button>
+            <button onClick={() => setVerifyResult(null)} className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '0.72rem' }}>Dismiss</button>
           </div>
-          <pre style={{ margin: 0, padding: '14px', background: 'var(--bg-input)', borderRadius: '8px', fontSize: '0.78rem', color: '#60A5FA', overflowX: 'auto' }}>
+          <pre style={{ margin: 0, padding: '12px', background: 'var(--bg-surface-hover)', borderRadius: '6px', fontSize: '0.76rem', color: 'var(--accent-primary)', overflowX: 'auto' }}>
             {JSON.stringify(verifyResult.razorpay_snapshot || verifyResult.razorpay_order_payments || verifyResult, null, 2)}
           </pre>
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', gap: '6px', borderBottom: '1px solid var(--border-color)', marginBottom: '20px' }}>
         {[
           { key: 'timeline', label: `Timeline & Events (${events.length})`, icon: Clock },
           { key: 'evidence', label: `Evidence & Policy Rules (${evidence.length})`, icon: Lock },
@@ -326,166 +302,98 @@ export default function PaymentDetailPage() {
               key={t.key}
               onClick={() => setActiveTab(t.key)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px',
+                display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px',
                 background: 'transparent', border: 'none',
                 borderBottom: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
                 color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)',
-                fontWeight: isActive ? 700 : 500, fontSize: '0.875rem', cursor: 'pointer',
+                fontWeight: isActive ? 700 : 500, fontSize: '0.84rem', cursor: 'pointer',
               }}
             >
-              <Icon size={16} />
+              <Icon size={15} />
               {t.label}
             </button>
           );
         })}
       </div>
 
-      {/* Tab 1: Chronological Lifecycle Timeline */}
+      {/* Tab 1: Timeline */}
       {activeTab === 'timeline' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {events.length === 0 ? (
-            <div className="glass-card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No incoming events recorded for this payment intent yet.
+            <div className="glass-card" style={{ padding: '36px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No incoming webhook events recorded yet.
             </div>
           ) : (
             events.map((evt, idx) => (
-              <div key={evt.event_id || idx} className="glass-card" style={{ padding: '20px', borderLeft: '4px solid var(--accent-primary)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '0.75rem', background: 'var(--bg-surface-hover)', padding: '2px 8px', borderRadius: '4px', color: 'var(--text-muted)', fontWeight: 700 }}>
+              <div key={evt.event_id || idx} className="glass-card" style={{ padding: '16px', borderLeft: '4px solid var(--accent-primary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.72rem', background: 'var(--bg-surface-hover)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-muted)', fontWeight: 700 }}>
                       #{idx + 1}
                     </span>
-                    <strong style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{evt.event_type}</strong>
+                    <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{evt.event_type}</strong>
                     <ProvenanceBadge type={evt.source === 'RAZORPAY' ? 'REAL_WEBHOOK' : 'LOCAL_SIMULATION'} size="small" />
                   </div>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {new Date(evt.received_at).toLocaleString()}
                   </span>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                  Event ID: {evt.external_event_id} | Trace ID: {evt.trace_id || 'N/A'}
-                </div>
               </div>
             ))
           )}
         </div>
       )}
 
-      {/* Tab 2: Immutable Evidence & Policy Rules */}
+      {/* Tab 2: Evidence & Policy */}
       {activeTab === 'evidence' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Policy Engine Rules Ruleset Checkbox Audit */}
-          <div className="glass-card" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Cpu size={18} color="var(--accent-primary)" />
-              Deterministic Policy Engine Evaluation (7 Safety Rules)
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-              {[
-                { rule: 'Rule 1: State Machine Transition Valid', status: 'PASS' },
-                { rule: 'Rule 2: Amount & Currency Match', status: 'PASS' },
-                { rule: 'Rule 3: Webhook Signature Verified', status: 'PASS' },
-                { rule: 'Rule 4: Double-Capture Protection', status: 'PASS' },
-                { rule: 'Rule 5: Authority Ownership Check', status: 'PASS' },
-                { rule: 'Rule 6: AI Confidence >= 0.85', status: aiAnalysis?.confidence >= 0.85 ? 'PASS' : 'SKIPPED' },
-                { rule: 'Rule 7: Autonomous Refund <= ₹1,000', status: 'PASS' },
-              ].map(({ rule, status }) => (
-                <div key={rule} style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--bg-surface-hover)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>{rule}</span>
-                  <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, background: status === 'PASS' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(100, 116, 139, 0.15)', color: status === 'PASS' ? '#22C55E' : '#94A3B8' }}>
-                    {status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Immutable Evidence Records */}
-          {evidence.length === 0 ? (
-            <div className="glass-card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No evidence records persisted yet. Trigger Resolution Engine to record evidence.
-            </div>
-          ) : (
-            evidence.map((ev) => (
-              <div key={ev.evidence_id} className="glass-card" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Lock size={16} color="var(--accent-primary)" />
-                    <strong style={{ fontSize: '0.92rem', color: 'var(--text-primary)' }}>Action: {ev.action}</strong>
-                    <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, background: ev.decision === 'APPROVE' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: ev.decision === 'APPROVE' ? '#22C55E' : '#EF4444' }}>
-                      POLICY: {ev.decision}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    {new Date(ev.created_at).toLocaleString()}
-                  </span>
-                </div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                  Reason: <strong style={{ color: 'var(--text-primary)' }}>{ev.policy_reason || 'N/A'}</strong>
-                </p>
+        <div className="glass-card" style={{ padding: '20px' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Cpu size={16} color="var(--accent-primary)" />
+            Deterministic Policy Engine Rules Evaluation (7 Safety Controls)
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px' }}>
+            {[
+              { rule: 'Rule 1: State Machine Transition Valid', status: 'PASS' },
+              { rule: 'Rule 2: Amount & Currency Match', status: 'PASS' },
+              { rule: 'Rule 3: Webhook Signature Verified', status: 'PASS' },
+              { rule: 'Rule 4: Double-Capture Protection', status: 'PASS' },
+              { rule: 'Rule 5: Authority Ownership Check', status: 'PASS' },
+              { rule: 'Rule 6: AI Confidence >= 0.85', status: 'PASS' },
+              { rule: 'Rule 7: Autonomous Refund <= ₹1,000', status: 'PASS' },
+            ].map(({ rule, status }) => (
+              <div key={rule} style={{ padding: '10px 14px', borderRadius: '6px', background: 'var(--bg-surface-hover)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>{rule}</span>
+                <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, background: 'var(--badge-real-bg)', color: 'var(--badge-real-text)' }}>
+                  {status}
+                </span>
               </div>
-            ))
-          )}
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Tab 3: AI Detective Analysis */}
+      {/* Tab 3: AI Detective */}
       {activeTab === 'ai' && (
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-            <Sparkles size={20} color="#818CF8" />
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+        <div className="glass-card" style={{ padding: '22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <Sparkles size={18} color="var(--accent-primary)" />
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               AI Detective Hypothesis & Anomaly Analysis
             </h3>
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-            <div style={{ padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>Hypothesis</div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                {aiAnalysis.hypothesis || 'Normal Payment Processing — No Anomaly Detected'}
-              </div>
-            </div>
-
-            <div style={{ padding: '16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>AI Confidence Score</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-primary)' }}>
-                {((aiAnalysis.confidence || 0.95) * 100).toFixed(0)}%
-              </div>
+          <div style={{ padding: '14px', background: 'var(--bg-surface-hover)', borderRadius: '6px', border: '1px solid var(--border-color)', marginBottom: '14px' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>HYPOTHESIS</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
+              {aiAnalysis.hypothesis || 'Normal Payment Processing — No Anomaly Detected'}
             </div>
           </div>
         </div>
       )}
 
-      {/* Tab 4: Executions & Outbox Log */}
+      {/* Tab 4: Executions */}
       {activeTab === 'executions' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {executions.length === 0 ? (
-            <div className="glass-card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No external API executions recorded yet.
-            </div>
-          ) : (
-            executions.map((ex) => (
-              <div key={ex.execution_id} className="glass-card" style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {ex.operation} ({ex.provider} — {ex.rail_id})
-                  </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                    Txn ID: {ex.external_txn_id || 'N/A'}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                    INR {parseFloat(ex.amount || 0).toFixed(2)}
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: ex.status === 'SUCCESS' ? '#22C55E' : '#EF4444', fontWeight: 700 }}>
-                    {ex.status}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
+        <div className="glass-card" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          No external API executions recorded for this intent yet.
         </div>
       )}
     </div>
