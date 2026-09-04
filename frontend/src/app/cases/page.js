@@ -49,7 +49,7 @@ export default function ReconciliationCasesPage() {
       const res = await api.forensicReplayCase(paymentIntentId);
       alert(`READ-ONLY FORENSIC REPLAY RESULT (ZERO SIDE EFFECTS):\n\n` + JSON.stringify(res, null, 2));
     } catch (err) {
-      alert(`Forensic Replay Error: ${err.message}`);
+      alert(`Replay Error: ${err.message}`);
     } finally {
       setActionLoading(null);
     }
@@ -58,32 +58,27 @@ export default function ReconciliationCasesPage() {
   const handleManualResolveSubmit = async (e) => {
     e.preventDefault();
     if (!manualResolveModal) return;
-    setActionLoading(`resolve-${manualResolveModal.case_id}`);
     try {
       await api.resolveCase(manualResolveModal.case_id, {
-        resolution_reason: resolutionNote || 'Operator manual reconciliation',
-        action: 'MANUAL_RESOLVE',
+        resolution_action: 'MANUAL_OVERRIDE',
+        notes: resolutionNote,
       });
-      alert('Case manually resolved successfully.');
+      alert('Case resolved successfully with immutable audit entry.');
       setManualResolveModal(null);
       setResolutionNote('');
       await loadCases();
     } catch (err) {
-      alert(`Manual Resolution Error: ${err.message}`);
-    } finally {
-      setActionLoading(null);
+      alert(`Resolution Error: ${err.message}`);
     }
   };
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '40px' }}>
       
       {/* Header Banner */}
-      <div style={{
+      <div className="card" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '20px 24px', background: '#FFFFFF', borderRadius: '12px',
-        border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-        flexWrap: 'wrap', gap: '16px',
+        padding: '20px 24px', flexWrap: 'wrap', gap: '16px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
@@ -95,17 +90,17 @@ export default function ReconciliationCasesPage() {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
+              <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
                 Reconciliation Cases Workspace
               </h1>
               <span style={{
-                background: '#FEF3C7', border: '1px solid #FDE047', color: '#B45309',
+                background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', color: 'var(--color-warning)',
                 fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px',
               }}>
                 THREE TRUTHS MATRIX
               </span>
             </div>
-            <p style={{ fontSize: '0.83rem', color: '#64748B', margin: '2px 0 0 0', fontWeight: 500 }}>
+            <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', margin: '2px 0 0 0', fontWeight: 500 }}>
               Operational queue for state machine discrepancies, rail timeouts, duplicate webhooks, and manual resolution escalations
             </p>
           </div>
@@ -114,29 +109,25 @@ export default function ReconciliationCasesPage() {
         <button
           onClick={loadCases}
           disabled={loading}
-          style={{
-            background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#334155',
-            padding: '8px 16px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700,
-            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
-          }}
+          className="btn btn-secondary"
+          style={{ fontSize: '0.8rem', fontWeight: 700 }}
         >
           <RefreshCw size={14} className={loading ? 'spin' : ''} /> Refresh Cases
         </button>
       </div>
 
       {/* Filter Toolbar */}
-      <div style={{
-        background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '12px 18px',
-        display: 'flex', gap: '16px', alignItems: 'center',
+      <div className="card" style={{
+        padding: '12px 18px', display: 'flex', gap: '16px', alignItems: 'center',
       }}>
-        <Filter size={16} color="#64748B" />
-        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>Filter Status:</span>
+        <Filter size={16} color="var(--text-muted)" />
+        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Filter Status:</span>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           style={{
-            background: '#F8FAFC', border: '1px solid #CBD5E1',
-            borderRadius: '6px', padding: '8px 12px', color: '#0F172A', fontSize: '0.83rem',
+            background: 'var(--bg-input)', border: '1px solid var(--border-color)',
+            borderRadius: '6px', padding: '8px 12px', color: 'var(--text-primary)', fontSize: '0.83rem',
             outline: 'none', cursor: 'pointer', fontWeight: 600,
           }}
         >
@@ -148,16 +139,16 @@ export default function ReconciliationCasesPage() {
       </div>
 
       {error && (
-        <div style={{ padding: '12px 16px', borderRadius: '8px', background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#B91C1C', fontSize: '0.85rem', fontWeight: 600 }}>
+        <div style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-border)', color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: 600 }}>
           ⚠ {error}
         </div>
       )}
 
       {/* Cases Table */}
-      <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+      <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.83rem' }}>
           <thead>
-            <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <tr style={{ background: 'var(--bg-surface-hover)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               <th style={{ padding: '12px 16px', fontWeight: 800 }}>Case ID</th>
               <th style={{ padding: '12px 16px', fontWeight: 800 }}>Payment Intent ID</th>
               <th style={{ padding: '12px 16px', fontWeight: 800 }}>Status</th>
@@ -169,35 +160,35 @@ export default function ReconciliationCasesPage() {
           <tbody>
             {cases.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
                   {loading ? 'Loading reconciliation cases...' : 'No open cases found.'}
                 </td>
               </tr>
             ) : (
               cases.map((c) => (
-                <tr key={c.case_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 800, color: '#0F172A', fontFamily: 'monospace' }}>
+                <tr key={c.case_id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <td style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
                     {c.case_id?.slice(0, 12)}…
                   </td>
-                  <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '0.8rem', color: '#2563EB' }}>
-                    <Link href={`/payments/${c.payment_intent_id}`} style={{ color: '#2563EB', textDecoration: 'none', fontWeight: 700 }}>
+                  <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--accent-primary)' }}>
+                    <Link href={`/payments/${c.payment_intent_id}`} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 700 }}>
                       {c.payment_intent_id?.slice(0, 16)}…
                     </Link>
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{
                       padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800,
-                      background: c.status === 'RESOLVED' ? '#DCFCE7' : '#FEF3C7',
-                      color: c.status === 'RESOLVED' ? '#15803D' : '#B45309',
-                      border: `1px solid ${c.status === 'RESOLVED' ? '#86EFAC' : '#FDE047'}`,
+                      background: c.status === 'RESOLVED' ? 'var(--color-success-bg)' : 'var(--color-warning-bg)',
+                      color: c.status === 'RESOLVED' ? 'var(--color-success)' : 'var(--color-warning)',
+                      border: `1px solid ${c.status === 'RESOLVED' ? 'var(--color-success-border)' : 'var(--color-warning-border)'}`,
                     }}>
                       {c.status || 'OPEN'}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0F172A' }}>
+                  <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {c.anomaly_type || c.issue_type || 'PAYMENT_STATE_ANOMALY'}
                   </td>
-                  <td style={{ padding: '12px 16px', fontSize: '0.78rem', color: '#64748B', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '12px 16px', fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                     {c.created_at ? new Date(c.created_at).toLocaleString() : 'N/A'}
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'right' }}>
@@ -205,24 +196,17 @@ export default function ReconciliationCasesPage() {
                       <button
                         onClick={() => handleForensicReplay(c.payment_intent_id)}
                         disabled={actionLoading === `replay-${c.payment_intent_id}`}
-                        style={{
-                          background: '#F1F5F9', border: '1px solid #CBD5E1', color: '#334155',
-                          padding: '5px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
-                          cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px',
-                        }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                         title="Run Read-Only Forensic Simulation"
                       >
-                        <RotateCcw size={12} /> Forensic Replay
+                        <RotateCcw size={12} className={actionLoading === `replay-${c.payment_intent_id}` ? 'spin' : ''} /> Forensic Replay
                       </button>
                       <button
                         onClick={() => setManualResolveModal(c)}
                         disabled={c.status === 'RESOLVED'}
-                        style={{
-                          background: c.status === 'RESOLVED' ? '#F1F5F9' : '#2563EB',
-                          border: 'none', color: c.status === 'RESOLVED' ? '#94A3B8' : '#FFFFFF',
-                          padding: '5px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
-                          cursor: c.status === 'RESOLVED' ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px',
-                        }}
+                        className={`btn btn-sm ${c.status === 'RESOLVED' ? 'btn-ghost' : 'btn-primary'}`}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                       >
                         <CheckCircle2 size={12} /> Manual Resolve
                       </button>
@@ -238,17 +222,16 @@ export default function ReconciliationCasesPage() {
       {/* Manual Resolution Modal */}
       {manualResolveModal && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.6)', zIndex: 1000,
+          position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)', zIndex: 1000,
           display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)',
         }}>
-          <form onSubmit={handleManualResolveSubmit} style={{
-            background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '12px',
-            padding: '24px', width: '480px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+          <form onSubmit={handleManualResolveSubmit} className="card" style={{
+            padding: '24px', width: '480px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.4)',
           }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', margin: '0 0 8px 0' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
               Manual Resolution — Case {manualResolveModal.case_id?.slice(0, 10)}
             </h3>
-            <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: '16px', lineHeight: '1.5' }}>
+            <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.5' }}>
               Record operator resolution justification in the compliance audit log.
             </p>
             <textarea
@@ -258,9 +241,9 @@ export default function ReconciliationCasesPage() {
               onChange={(e) => setResolutionNote(e.target.value)}
               placeholder="Specify manual resolution reason (e.g. Verified with bank switch, user confirmed refund)..."
               style={{
-                width: '100%', boxSizing: 'border-box', background: '#F8FAFC',
-                border: '1px solid #CBD5E1', borderRadius: '8px',
-                padding: '12px', color: '#0F172A', fontSize: '0.85rem',
+                width: '100%', boxSizing: 'border-box', background: 'var(--bg-input)',
+                border: '1px solid var(--border-color)', borderRadius: '8px',
+                padding: '12px', color: 'var(--text-primary)', fontSize: '0.85rem',
                 marginBottom: '20px', outline: 'none', fontWeight: 500,
               }}
             />
@@ -268,13 +251,13 @@ export default function ReconciliationCasesPage() {
               <button
                 type="button"
                 onClick={() => setManualResolveModal(null)}
-                style={{ background: '#F1F5F9', border: '1px solid #CBD5E1', color: '#475569', padding: '8px 16px', borderRadius: '6px', fontSize: '0.83rem', fontWeight: 600, cursor: 'pointer' }}
+                className="btn btn-secondary btn-sm"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                style={{ background: '#2563EB', border: 'none', color: '#FFFFFF', padding: '8px 16px', borderRadius: '6px', fontSize: '0.83rem', fontWeight: 800, cursor: 'pointer' }}
+                className="btn btn-primary btn-sm"
               >
                 Submit Resolution
               </button>

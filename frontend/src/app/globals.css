@@ -1,23 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --bg-primary: #0B1120;
+  --bg-page: #0B0F19;
+  --bg-primary: #0B0F19;
   --bg-secondary: #111827;
-  --bg-surface: #1A2332;
-  --bg-surface-hover: #1F2A3D;
-  --bg-surface-elevated: #253349;
-  --bg-input: #111827;
-  --bg-sidebar: #0F1729;
-  --border-color: rgba(148,163,184,0.12);
-  --border-subtle: rgba(148,163,184,0.06);
+  --bg-surface: #111827;
+  --bg-surface-hover: #172033;
+  --bg-surface-elevated: #1E293B;
+  --bg-input: #0E1420;
+  --bg-sidebar: #0B0F19;
+  --border-color: #263247;
+  --border-subtle: #1E293B;
   --border-active: #3B82F6;
   --accent-primary: #3B82F6;
   --accent-primary-hover: #2563EB;
   --accent-light: rgba(59,130,246,0.1);
   --accent-glow: rgba(59,130,246,0.15);
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
   --text-inverse: #0F172A;
   --card-shadow: 0 1px 3px rgba(0,0,0,0.3);
   --card-shadow-hover: 0 4px 12px rgba(0,0,0,0.4);
@@ -64,6 +65,7 @@
 }
 
 [data-theme="light"] {
+  --bg-page: #F8FAFC;
   --bg-primary: #F8FAFC;
   --bg-secondary: #FFFFFF;
   --bg-surface: #FFFFFF;
@@ -91,18 +93,19 @@
 }
 
 [data-theme="dark"] {
-  --bg-primary: #0B1120;
+  --bg-page: #0B0F19;
+  --bg-primary: #0B0F19;
   --bg-secondary: #111827;
-  --bg-surface: #1A2332;
-  --bg-surface-hover: #1F2A3D;
-  --bg-surface-elevated: #253349;
-  --bg-input: #111827;
-  --bg-sidebar: #0F1729;
-  --border-color: rgba(148,163,184,0.12);
-  --border-subtle: rgba(148,163,184,0.06);
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
+  --bg-surface: #111827;
+  --bg-surface-hover: #172033;
+  --bg-surface-elevated: #1E293B;
+  --bg-input: #0E1420;
+  --bg-sidebar: #0B0F19;
+  --border-color: #263247;
+  --border-subtle: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
   --text-inverse: #0F172A;
 }
 
@@ -131,6 +134,15 @@ a { text-decoration: none; color: inherit; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Form Elements */
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+  color: var(--text-primary);
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
 
 /* Cards */
 .card {
@@ -259,14 +271,14 @@ select.input { cursor: pointer; }
 
 /* Command Palette */
 .cmd-overlay {
-  position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5);
+  position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.6);
   display: flex; align-items: flex-start; justify-content: center;
   padding-top: 20vh; backdrop-filter: blur(4px);
 }
 .cmd-dialog {
   width: 100%; max-width: 520px; background: var(--bg-surface);
   border: 1px solid var(--border-color); border-radius: var(--radius-lg);
-  box-shadow: 0 24px 48px rgba(0,0,0,0.4); overflow: hidden;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.5); overflow: hidden;
 }
 .cmd-input {
   width: 100%; padding: 16px 20px; background: transparent;
