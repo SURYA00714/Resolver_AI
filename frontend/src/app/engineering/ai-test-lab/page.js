@@ -82,6 +82,45 @@ export default function AITestLabPage() {
     }
   };
 
+  const getStatusBadge = (statusStr) => {
+    switch (statusStr) {
+      case 'COMPLETED':
+        return { bg: 'rgba(34, 197, 94, 0.15)', color: '#22C55E', text: 'COMPLETED' };
+      case 'FAILED':
+        return { bg: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', text: 'FAILED' };
+      case 'TIMED_OUT':
+        return { bg: 'rgba(249, 115, 22, 0.15)', color: '#F97316', text: 'TIMED OUT' };
+      case 'STOPPED':
+        return { bg: 'rgba(100, 116, 139, 0.15)', color: '#94A3B8', text: 'STOPPED' };
+      case 'RUNNING':
+      default:
+        return { bg: 'rgba(234, 179, 8, 0.15)', color: '#EAB308', text: statusStr || 'RUNNING' };
+    }
+  };
+
+  const pollRunDetails = async (runId, maxSeconds = 30) => {
+    const start = Date.now();
+    while (Date.now() - start < maxSeconds * 1000) {
+      try {
+        const data = await api.getTestLabRun(runId);
+        if (data?.run) {
+          setActiveRun(data);
+          if (data.results?.length > 0) {
+            setSelectedResult(data.results[0]);
+          }
+          if (['COMPLETED', 'FAILED', 'TIMED_OUT', 'STOPPED'].includes(data.run.status)) {
+            await loadLabData();
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('Polling run details:', e);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    }
+    await loadLabData();
+  };
+
   const triggerBuildathonDemo = async () => {
     setDemoExecuting(true);
     setErrorMsg(null);
@@ -91,7 +130,11 @@ export default function AITestLabPage() {
       if (res.run?.results?.length > 0) {
         setSelectedResult(res.run.results[0]);
       }
-      await loadLabData();
+      if (res.run?.run_id && res.run?.status === 'RUNNING') {
+        await pollRunDetails(res.run.run_id);
+      } else {
+        await loadLabData();
+      }
     } catch (err) {
       setErrorMsg(err.message || 'Buildathon Demo execution failed');
     } finally {
@@ -109,7 +152,11 @@ export default function AITestLabPage() {
       if (res.run?.results?.length > 0) {
         setSelectedResult(res.run.results[0]);
       }
-      await loadLabData();
+      if (res.run?.run_id && res.run?.status === 'RUNNING') {
+        await pollRunDetails(res.run.run_id);
+      } else {
+        await loadLabData();
+      }
     } catch (err) {
       setErrorMsg(err.message || 'Adversarial suite execution failed');
     } finally {
@@ -126,7 +173,11 @@ export default function AITestLabPage() {
       if (res.run?.results?.length > 0) {
         setSelectedResult(res.run.results[0]);
       }
-      await loadLabData();
+      if (res.run?.run_id && res.run?.status === 'RUNNING') {
+        await pollRunDetails(res.run.run_id);
+      } else {
+        await loadLabData();
+      }
     } catch (err) {
       setErrorMsg(err.message || 'Scenario execution failed');
     } finally {
@@ -507,13 +558,17 @@ export default function AITestLabPage() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <span style={{
-                      padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
-                      background: latestRun.status === 'COMPLETED' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
-                      color: latestRun.status === 'COMPLETED' ? '#22C55E' : '#EAB308',
-                    }}>
-                      {latestRun.status}
-                    </span>
+                    {(() => {
+                      const b = getStatusBadge(latestRun.status);
+                      return (
+                        <span style={{
+                          padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
+                          background: b.bg, color: b.color,
+                        }}>
+                          {b.text}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -679,13 +734,17 @@ export default function AITestLabPage() {
                         </td>
                         <td style={{ padding: '8px 4px', color: 'var(--text-secondary)' }}>{r.run_type}</td>
                         <td style={{ padding: '8px 4px' }}>
-                          <span style={{
-                            padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '0.68rem',
-                            background: r.status === 'COMPLETED' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
-                            color: r.status === 'COMPLETED' ? '#22C55E' : '#EAB308',
-                          }}>
-                            {r.status}
-                          </span>
+                          {(() => {
+                            const b = getStatusBadge(r.status);
+                            return (
+                              <span style={{
+                                padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '0.68rem',
+                                background: b.bg, color: b.color,
+                              }}>
+                                {b.text}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td style={{ padding: '8px 4px', color: '#22C55E', fontWeight: 700 }}>
                           {r.scenarios_passed} / {r.scenarios_total}

@@ -21,6 +21,7 @@ import {
   Sparkles,
   FileCode,
   RotateCcw,
+  HelpCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 

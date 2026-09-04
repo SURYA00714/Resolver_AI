@@ -17,6 +17,9 @@ from core.ai_test_lab.isolation import (
     check_test_environment_safety,
 )
 from core.ai_test_lab.runner import (
+    ActiveRunConflictError,
+    is_run_active,
+    recover_stale_runs,
     request_stop_run,
     run_demo_suite,
     run_scenario,
@@ -52,6 +55,7 @@ async def _ensure_ai_test_tables(conn: asyncpg.Connection):
                 risk_level VARCHAR(50) DEFAULT 'INFORMATIONAL',
                 started_at TIMESTAMPTZ DEFAULT NOW(),
                 completed_at TIMESTAMPTZ,
+                error_message TEXT,
                 created_by VARCHAR(255) DEFAULT 'OPERATOR',
                 provenance VARCHAR(255) DEFAULT 'LOCAL_AI_SIMULATION'
             );
@@ -95,6 +99,7 @@ def _check_test_lab_environment():
 async def get_test_lab_status(user: dict = Depends(require_permission("read:dashboard"))):
     """
     Get current AI Test Lab operational status, mode, active provider, and summary metrics.
+    Automatically recovers stale RUNNING test runs.
     """
     is_locked = (str(config.ENVIRONMENT).lower() == "production")
     provider = get_provider()
@@ -104,11 +109,12 @@ async def get_test_lab_status(user: dict = Depends(require_permission("read:dash
 
     try:
         pool = await get_pool()
+        await recover_stale_runs(pool)
         async with pool.acquire() as conn:
             await _ensure_ai_test_tables(conn)
             latest_run = await conn.fetchrow(
                 """SELECT run_id, run_type, status, scenarios_total, scenarios_passed,
-                          scenarios_failed, scenarios_warning, risk_level, started_at, completed_at
+                          scenarios_failed, scenarios_warning, risk_level, started_at, completed_at, error_message
                    FROM ai_test_runs ORDER BY started_at DESC LIMIT 1"""
             )
             totals = await conn.fetchrow(
@@ -135,6 +141,7 @@ async def get_test_lab_status(user: dict = Depends(require_permission("read:dash
             "risk_level": latest_run["risk_level"],
             "started_at": latest_run["started_at"].isoformat() if latest_run["started_at"] else None,
             "completed_at": latest_run["completed_at"].isoformat() if latest_run["completed_at"] else None,
+            "error_message": latest_run.get("error_message"),
         }
 
     return {
@@ -143,7 +150,7 @@ async def get_test_lab_status(user: dict = Depends(require_permission("read:dash
         "isolated_environment": True,
         "locked": is_locked,
         "environment": config.ENVIRONMENT,
-        "ai_tester_status": "IDLE",
+        "ai_tester_status": "ACTIVE" if is_run_active() else "IDLE",
         "active_ai_provider": provider.provider_name,
         "razorpay_mode": config.RAZORPAY_MODE,
         "totals": {
@@ -155,7 +162,6 @@ async def get_test_lab_status(user: dict = Depends(require_permission("read:dash
         },
         "latest_run": latest_data,
     }
-
 
 
 @router.get("/scenarios", summary="Get Scenario Library")
@@ -192,6 +198,7 @@ async def execute_test_run(
 ):
     """
     Execute a single scenario, a selection of scenarios, or the official BUILDATHON DEMO suite.
+    Enforces concurrency protection (1 active run at a time).
     """
     _check_test_lab_environment()
 
@@ -199,31 +206,34 @@ async def execute_test_run(
     run_mode = payload.get("mode", "BASELINE").upper()
     scenario_type = payload.get("scenario_type")
 
-    if run_mode == "DEMO" or payload.get("demo") is True:
-        test_run = await run_demo_suite()
+    try:
+        if run_mode == "DEMO" or payload.get("demo") is True:
+            test_run = await run_demo_suite()
+            return {
+                "_banner": ENGINEERING_BANNER,
+                "run": test_run.dict(),
+                "message": "BUILDATHON DEMO RUN executed successfully.",
+            }
+
+        baselines = get_baseline_scenarios()
+
+        if scenario_type:
+            selected = [s for s in baselines if s.scenario_type == scenario_type or s.scenario_id == scenario_type]
+            if not selected:
+                raise HTTPException(status_code=404, detail=f"Scenario type '{scenario_type}' not found.")
+        elif "scenario_ids" in payload:
+            s_ids = set(payload["scenario_ids"])
+            selected = [s for s in baselines if s.scenario_id in s_ids or s.scenario_type in s_ids]
+        else:
+            selected = baselines
+
+        test_run = await run_test_suite(selected, run_type=run_mode, created_by=user.get("sub", "OPERATOR"))
         return {
             "_banner": ENGINEERING_BANNER,
             "run": test_run.dict(),
-            "message": "BUILDATHON DEMO RUN executed successfully.",
         }
-
-    baselines = get_baseline_scenarios()
-
-    if scenario_type:
-        selected = [s for s in baselines if s.scenario_type == scenario_type or s.scenario_id == scenario_type]
-        if not selected:
-            raise HTTPException(status_code=404, detail=f"Scenario type '{scenario_type}' not found.")
-    elif "scenario_ids" in payload:
-        s_ids = set(payload["scenario_ids"])
-        selected = [s for s in baselines if s.scenario_id in s_ids or s.scenario_type in s_ids]
-    else:
-        selected = baselines
-
-    test_run = await run_test_suite(selected, run_type=run_mode, created_by=user.get("sub", "OPERATOR"))
-    return {
-        "_banner": ENGINEERING_BANNER,
-        "run": test_run.dict(),
-    }
+    except ActiveRunConflictError as err:
+        raise HTTPException(status_code=409, detail=str(err))
 
 
 @router.post("/run/{run_id}/stop", summary="Stop Ongoing Test Run")
@@ -246,11 +256,12 @@ async def get_test_runs(
     runs = []
     try:
         pool = await get_pool()
+        await recover_stale_runs(pool)
         async with pool.acquire() as conn:
             await _ensure_ai_test_tables(conn)
             rows = await conn.fetch(
                 """SELECT run_id, run_type, status, scenarios_total, scenarios_passed,
-                          scenarios_failed, scenarios_warning, risk_level, started_at, completed_at, created_by, provenance
+                          scenarios_failed, scenarios_warning, risk_level, started_at, completed_at, error_message, created_by, provenance
                    FROM ai_test_runs ORDER BY started_at DESC LIMIT $1""",
                 limit
             )
@@ -267,6 +278,7 @@ async def get_test_runs(
                 "risk_level": r["risk_level"],
                 "started_at": r["started_at"].isoformat() if r["started_at"] else None,
                 "completed_at": r["completed_at"].isoformat() if r["completed_at"] else None,
+                "error_message": r.get("error_message"),
                 "created_by": r["created_by"],
                 "provenance": r["provenance"],
             }
@@ -276,7 +288,6 @@ async def get_test_runs(
         pass
 
     return {"runs": runs}
-
 
 
 @router.get("/runs/{run_id}", summary="Get Test Run Details")
@@ -332,6 +343,7 @@ async def get_test_run_details(
             "risk_level": run_row["risk_level"],
             "started_at": run_row["started_at"].isoformat() if run_row["started_at"] else None,
             "completed_at": run_row["completed_at"].isoformat() if run_row["completed_at"] else None,
+            "error_message": run_row.get("error_message"),
             "created_by": run_row["created_by"],
             "provenance": run_row["provenance"],
         },
@@ -418,6 +430,7 @@ async def run_adversarial_suite(
 ):
     """
     Execute an autonomous AI Adversarial Test Run (10-25 scenarios).
+    Enforces concurrency protection.
     """
     _check_test_lab_environment()
 
@@ -425,14 +438,17 @@ async def run_adversarial_suite(
     count = int(payload.get("count", 10))
     count = min(max(count, 5), 25)  # max scenario count bounded to 25
 
-    generated_scens = await generate_ai_scenarios(count=count, category="ADVERSARIAL")
-    test_run = await run_test_suite(
-        generated_scens,
-        run_type="ADVERSARIAL",
-        created_by=user.get("sub", "AI_ADVERSARIAL_TESTER"),
-    )
+    try:
+        generated_scens = await generate_ai_scenarios(count=count, category="ADVERSARIAL")
+        test_run = await run_test_suite(
+            generated_scens,
+            run_type="ADVERSARIAL",
+            created_by=user.get("sub", "AI_ADVERSARIAL_TESTER"),
+        )
 
-    return {
-        "_banner": ENGINEERING_BANNER,
-        "run": test_run.dict(),
-    }
+        return {
+            "_banner": ENGINEERING_BANNER,
+            "run": test_run.dict(),
+        }
+    except ActiveRunConflictError as err:
+        raise HTTPException(status_code=409, detail=str(err))

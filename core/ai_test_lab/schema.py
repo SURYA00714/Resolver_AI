@@ -33,6 +33,7 @@ class RunStatus(str, Enum):
     COMPLETED = "COMPLETED"
     STOPPED = "STOPPED"
     FAILED = "FAILED"
+    TIMED_OUT = "TIMED_OUT"
 
 
 class SyntheticEvent(BaseModel):
@@ -126,6 +127,7 @@ class TestRun(BaseModel):
     risk_level: RiskLevel = RiskLevel.LOW
     started_at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
     completed_at: Optional[str] = None
+    error_message: Optional[str] = None
     created_by: str = "SYSTEM"
     provenance: str = "AI_TEST_LAB"
     results: List[TestResult] = Field(default_factory=list)

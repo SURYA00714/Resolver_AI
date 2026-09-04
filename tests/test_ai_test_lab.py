@@ -3,10 +3,11 @@
 import asyncio
 import os
 import unittest
+import uuid
 from decimal import Decimal
 
 import config
-from db.connection import check_db
+from db.connection import check_db, get_pool
 from core.ai_test_lab.generator import (
     SecurityValidationError,
     validate_ai_scenario_schema,
@@ -20,7 +21,14 @@ from core.ai_test_lab.isolation import (
     validate_synthetic_id,
 )
 from core.ai_test_lab.oracle import evaluate_scenario_result
-from core.ai_test_lab.runner import run_demo_suite, run_scenario
+from core.ai_test_lab.runner import (
+    ActiveRunConflictError,
+    recover_stale_runs,
+    run_demo_suite,
+    run_scenario,
+    run_test_suite,
+)
+import core.ai_test_lab.runner as runner_module
 from core.ai_test_lab.scenarios import get_baseline_scenarios, get_scenario_by_type
 from core.ai_test_lab.schema import (
     ExpectedResult,
@@ -189,6 +197,79 @@ class TestAITestLabExecution(unittest.TestCase):
         self.assertEqual(test_run.status.value, "COMPLETED")
         self.assertEqual(test_run.scenarios_total, 8)
         self.assertEqual(len(test_run.results), 8)
+        for res in test_run.results:
+            self.assertFalse(res.actual_result.actual_financial_mutation)
+
+    def test_run_test_suite_completed_and_completed_at(self):
+        """Verify normal test run finalizes to COMPLETED with completed_at populated."""
+        scens = [get_scenario_by_type("SUCCESS_FLOW")]
+        test_run = asyncio.run(run_test_suite(scens, run_type="BASELINE"))
+        self.assertEqual(test_run.status.value, "COMPLETED")
+        self.assertIsNotNone(test_run.completed_at)
+
+    def test_failing_scenario_run_finalizes(self):
+        """Verify run finalizes even if scenario fails oracle checks."""
+        scen = get_scenario_by_type("SUCCESS_FLOW")
+        failing_scen = scen.model_copy(deep=True)
+        failing_scen.expected_result.expected_state = "NON_EXISTENT_STATE_XYZ"
+        test_run = asyncio.run(run_test_suite([failing_scen], run_type="FAIL_TEST"))
+        self.assertEqual(test_run.status.value, "COMPLETED")
+        self.assertEqual(test_run.scenarios_failed, 1)
+
+    def test_scenario_exception_captured_run_finalizes(self):
+        """Verify an exception inside scenario execution is recorded as a result and run finalizes."""
+        scen = get_scenario_by_type("SUCCESS_FLOW")
+        bad_scen = scen.model_copy(deep=True)
+        bad_scen.events = None
+        test_run = asyncio.run(run_test_suite([bad_scen], run_type="EXC_TEST"))
+        self.assertIn(test_run.status.value, ("COMPLETED", "FAILED"))
+        self.assertIsNotNone(test_run.completed_at)
+
+    def test_run_timeout_to_timed_out(self):
+        """Verify timeout enforces TIMED_OUT status and stores clear reason."""
+        scen = get_scenario_by_type("SUCCESS_FLOW")
+        test_run = asyncio.run(run_test_suite([scen], run_type="TIMEOUT_TEST", timeout_seconds=0.00001))
+        self.assertEqual(test_run.status.value, "TIMED_OUT")
+        self.assertIn("timeout", test_run.error_message.lower())
+        self.assertIsNotNone(test_run.completed_at)
+
+    def test_stale_running_recovery(self):
+        """Verify recover_stale_runs marks old RUNNING rows as TIMED_OUT."""
+        pool = asyncio.run(get_pool())
+        stale_run_id = uuid.uuid4()
+
+        async def _insert_stale():
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """INSERT INTO ai_test_runs
+                       (run_id, run_type, status, scenarios_total, started_at)
+                       VALUES ($1, 'STALE_TEST', 'RUNNING', 1, NOW() - INTERVAL '120 seconds')""",
+                    stale_run_id
+                )
+        asyncio.run(_insert_stale())
+
+        recovered = asyncio.run(recover_stale_runs(pool, timeout_seconds=60.0))
+        self.assertGreaterEqual(recovered, 1)
+
+        async def _check_stale():
+            async with pool.acquire() as conn:
+                return await conn.fetchrow("SELECT status, error_message, completed_at FROM ai_test_runs WHERE run_id = $1", stale_run_id)
+        row = asyncio.run(_check_stale())
+        self.assertEqual(row["status"], "TIMED_OUT")
+        self.assertIsNotNone(row["completed_at"])
+
+    def test_concurrent_run_protection(self):
+        """Verify attempting concurrent runs raises ActiveRunConflictError."""
+        runner_module._ACTIVE_RUN_ID = "mock_active_run_123"
+        try:
+            with self.assertRaises(ActiveRunConflictError):
+                asyncio.run(run_test_suite([get_scenario_by_type("SUCCESS_FLOW")]))
+        finally:
+            runner_module._ACTIVE_RUN_ID = None
+
+    def test_zero_financial_mutations_invariant(self):
+        """Verify zero financial mutations are created during test runs."""
+        test_run = asyncio.run(run_demo_suite())
         for res in test_run.results:
             self.assertFalse(res.actual_result.actual_financial_mutation)
 

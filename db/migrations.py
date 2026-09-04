@@ -95,6 +95,9 @@ async def run_migrations(pool: asyncpg.Pool) -> None:
                 CREATE INDEX IF NOT EXISTS idx_evidence_intent
                     ON immutable_evidence(payment_intent_id, created_at);
 
+                ALTER TABLE ai_test_runs
+                    ADD COLUMN IF NOT EXISTS error_message TEXT;
+
                 -- AI Test Lab tables
                 CREATE TABLE IF NOT EXISTS ai_test_runs (
                     run_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -107,6 +110,7 @@ async def run_migrations(pool: asyncpg.Pool) -> None:
                     risk_level VARCHAR(50) DEFAULT 'INFORMATIONAL',
                     started_at TIMESTAMPTZ DEFAULT NOW(),
                     completed_at TIMESTAMPTZ,
+                    error_message TEXT,
                     created_by VARCHAR(255) DEFAULT 'OPERATOR',
                     provenance VARCHAR(255) DEFAULT 'LOCAL_AI_SIMULATION'
                 );
